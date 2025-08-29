@@ -99,30 +99,34 @@ def load_params(config_path: str) -> Params:
 
     # 1) Initialization: WAU split
     init_wau = safe_get(cfg, "initial_wau_by_group", default=None)
-    if not init_wau:
+    if not init_wau or not init_wau.get("partners"):
         # Fallback: split a provided WAU total if present in notes; otherwise default 50/50 of 300k
-        wau_total = 300_000
+        wau_total = cfg.get("initial_wau_total", 300_000)
         share = safe_get(cfg, "user_groups", "active_user_share", default={"partners": 0.5, "non_partners": 0.5})
         init_wau = {g: wau_total * float(share.get(g, 0.5)) for g in GROUPS}
 
-    # 2) New accounts inflow
-    na_mode = safe_get(cfg, "new_accounts", "mode", default=None)
-    na_series: Dict[str, List[float]] = {}
-    if na_mode == "series":
-        series = safe_get(cfg, "new_accounts", "series_by_group", default={})
-        for g in GROUPS:
-            na_series[g] = [float(x) for x in series.get(g, [0.0] * weeks)][:weeks]
-            if len(na_series[g]) < weeks:
-                na_series[g].extend([0.0] * (weeks - len(na_series[g])))
+    # 2) New accounts inflow (prefer historical series if present)
+    new_accounts_series_by_group = safe_get(cfg, "historical_series", "weekly_new_accounts_by_group", default=None)
+    if new_accounts_series_by_group:
+        na_mode = "series"
+        na_series = new_accounts_series_by_group
     else:
-        # Fallback to baseline+growth if present, else zeros
-        base = safe_get(cfg, "new_accounts", "baseline_per_week_by_group", default={})
-        growth = safe_get(cfg, "new_accounts", "growth_rate_weekly_by_group", default={})
-        acct_rate = safe_get(cfg, "rates", "acct_create_rate", default=1.0)
-        for g in GROUPS:
-            b = float(base.get(g, 0.0))
-            r = float(growth.get(g, 0.0))
-            na_series[g] = [b * ((1.0 + r) ** t) * float(acct_rate) for t in range(weeks)]
+        na_mode = safe_get(cfg, "new_accounts", "mode", default="baseline_growth")
+        na_series = {}
+        if na_mode == "series":
+            series = safe_get(cfg, "new_accounts", "series_by_group", default={})
+            for g in GROUPS:
+                na_series[g] = [float(x) for x in series.get(g, [0.0] * weeks)][:weeks]
+                if len(na_series[g]) < weeks:
+                    na_series[g].extend([0.0] * (weeks - len(na_series[g])))
+        else: # baseline_growth
+            base = safe_get(cfg, "new_accounts", "baseline_per_week_by_group", default={})
+            growth = safe_get(cfg, "new_accounts", "growth_rate_weekly_by_group", default={})
+            for g in GROUPS:
+                b = float(base.get(g, 0.0))
+                r = float(growth.get(g, 0.0))
+                na_series[g] = [b * ((1.0 + r) ** t) for t in range(weeks)]
+
 
     # 3) Mature churn weekly rate (prefer estimated rates from config)
     weekly_churn: Dict[str, float] = {}
@@ -130,39 +134,31 @@ def load_params(config_path: str) -> Params:
     if est_weekly and all(g in est_weekly for g in GROUPS):
         weekly_churn = {g: float(est_weekly[g]) for g in GROUPS}
     else:
-        # Try monthly rates
-        monthly = safe_get(cfg, "estimated_churn_from_12m_inactivity", "monthly_mature_churn_rate_by_group", default=None)
-        if not monthly:
-            monthly = safe_get(cfg, "monthly_mature_churn_rate_by_group", default=None)
+        monthly = safe_get(cfg, "monthly_mature_churn_rate_by_group", default={})
         if monthly:
             weekly_churn = {g: monthly_to_weekly_rate(float(monthly.get(g, 0.0))) for g in GROUPS}
         else:
-            # Final fallback: small default
             weekly_churn = {g: monthly_to_weekly_rate(0.03) for g in GROUPS}
 
     # 4) Cohort weights W_k and graduation p_grad
-    cohort_use = safe_get(cfg, "cohort", "use_cohort_csv", default=False)
-    cohort_path = safe_get(cfg, "cohort", "cohort_csv_path", default=None)
-    hazard_scale = float(safe_get(cfg, "cohort", "retention_hazard_scale", default=1.0))
-    retention_points = safe_get(cfg, "retention_curve", default=None) or safe_get(cfg, "retention_points", default=None)
+    cohort_path = cfg.get("cohort_csv_path")
+    hazard_scale = float(cfg.get("retention_hazard_scale", 1.0))
+    retention_points = cfg.get("retention_points")
 
-    if cohort_use and cohort_path and os.path.exists(cohort_path):
+    if cohort_path and os.path.exists(cohort_path):
         W, p_grad = _derive_presence_from_cohort_csv(cohort_path, hazard_scale)
+        cohort_use_csv = True
     elif retention_points:
         W, p_grad = _derive_presence_from_retention_points(retention_points)
+        cohort_use_csv = False
     else:
-        # Conservative defaults if nothing else is provided
-        W = [0.25] + [0.18] * 3 + [0.12] * 4 + [0.08] * 5  # sums to ~1.87 "presence-weeks" in 13 weeks
+        W = [0.25] + [0.18] * 3 + [0.12] * 4 + [0.08] * 5
         p_grad = 0.02
+        cohort_use_csv = False
 
     # 5) Booker rates + calibration mode
-    booker = safe_get(cfg, "booker", "booker_rate_weekly_by_group", default=None)
-    if booker:
-        p_book = {g: (None if booker.get(g) is None else float(booker.get(g))) for g in GROUPS}
-    else:
-        # Also support the legacy location 'rates.booker_share_weekly'
-        legacy = safe_get(cfg, "rates", "booker_share_weekly", default=None)
-        p_book = {g: float(legacy) if legacy is not None else None for g in GROUPS}
+    booker_cfg = cfg.get("booker_rate_weekly_by_group", {})
+    p_book = {g: booker_cfg.get(g) for g in GROUPS}
 
     calib_mode = safe_get(cfg, "calibration", "mode", default="none")
     target_take = safe_get(cfg, "calibration", "target_annual_take_usd", default=None)
@@ -172,6 +168,7 @@ def load_params(config_path: str) -> Params:
     else:
         calibration_mode = "none"
         target_annual_take_usd = None
+
 
     # 6) Frequencies + economics
     freq = safe_get(cfg, "purchases_per_booker_per_year_by_lob_by_group", default={})
@@ -187,17 +184,18 @@ def load_params(config_path: str) -> Params:
         )
 
     flights_gate = safe_get(cfg, "flights_gate", default={"partners": True, "non_partners": False})
-    dau_wau_ratio = safe_get(cfg, "sanity", "dau_wau_ratio", default=None) or safe_get(cfg, "dau_wau_ratio", default=None)
+    dau_wau_ratio = cfg.get("dau_wau_ratio")
+
 
     return Params(
         weeks=weeks,
         initial_wau_by_group={g: float(init_wau.get(g, 0.0)) for g in GROUPS},
-        new_accounts_mode=na_mode or "series",
+        new_accounts_mode=na_mode,
         new_accounts_series_by_group=na_series,
-        signups_weekly_baseline_by_group=safe_get(cfg, "signups_weekly_baseline_by_group", default={}) or {},
-        signup_growth_rate_weekly_by_group=safe_get(cfg, "signup_growth_rate_weekly_by_group", default={}) or {},
-        acct_create_rate=float(safe_get(cfg, "rates", "acct_create_rate", default=1.0)),
-        cohort_use_csv=bool(cohort_use),
+        signups_weekly_baseline_by_group=safe_get(cfg, "new_accounts", "baseline_per_week_by_group", default={}),
+        signup_growth_rate_weekly_by_group=safe_get(cfg, "new_accounts", "growth_rate_weekly_by_group", default={}),
+        acct_create_rate=1.0, # Not in config, but kept for compatibility
+        cohort_use_csv=cohort_use_csv,
         cohort_csv_path=cohort_path,
         retention_points=retention_points,
         retention_hazard_scale=hazard_scale,
@@ -213,7 +211,6 @@ def load_params(config_path: str) -> Params:
         dau_wau_ratio=float(dau_wau_ratio) if dau_wau_ratio is not None else None,
     )
 
-
 def _derive_presence_from_cohort_csv(csv_path: str, hazard_scale: float = 1.0) -> Tuple[List[float], float]:
     """
     Expect either:
@@ -223,7 +220,7 @@ def _derive_presence_from_cohort_csv(csv_path: str, hazard_scale: float = 1.0) -
     Returns (W[0..12], p_grad).
     """
     import pandas as pd
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path, header=1)
 
     p_active_day = None
 
