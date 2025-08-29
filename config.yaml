@@ -1,5 +1,102 @@
+
+# ===========================
+# Weekly Travel Finance Simulator — CONFIG
+# Simplified funnel: ACTIVE → BOOKERS → BOOKINGS → TAKE
+# Your choices implemented:
+#   - Keep New Accounts as a lever
+#   - Initialize Active from WAU
+#   - Use Cohort CSV mode for 0–90d onboarding contribution to WAU
+#   - Calibrate p_book (booker rate) while keeping per-LOB frequencies fixed
+#   - Flights gate: Partners CAN book flights; Non-partners CANNOT (suppression, no redistribution)
+#   - DAU/WAU used only as a sanity check (no direct effect on the sim)
+# ===========================
+
+
 time_grain: weekly
-commercial_flights_enabled: false
+
+# --- GROUPS & INITIALIZATION ---
+user_groups:
+  # Share of initial WAU by group when only a total WAU is provided.
+  # If you have exact per-group WAU, set those below and ignore this share.
+  active_user_share:
+    partners: 0.5
+    non_partners: 0.5
+
+# Initialize from WAU (7-day actives). Replace with your latest measured WAU.
+# If you have per-group WAU, set `initial_wau_by_group`; otherwise set `initial_wau_total`.
+initial_wau_total: 300000    # <-- From your note: 7-day MAU/WAU ≈ 300k
+initial_wau_by_group:
+  partners: null             # set integers to override shares, e.g., 160000
+  non_partners: null
+
+# Optional DAU/WAU sanity check (no simulation impact). If provided, the runner will print a check.
+dau_wau_ratio: 0.35          # <-- From your note (≈ 35%). Implies ~2.45 active days/week per WAU.
+
+# --- NEW ACCOUNTS (SIGNUP INFLOW) ---
+# You can specify either a weekly baseline + growth, or an explicit weekly series.
+new_accounts:
+  mode: baseline_growth   # "baseline_growth" or "series"
+  # When mode == baseline_growth:
+  baseline_per_week_by_group:
+    partners: 756         # Placeholder. Roughly sized so WAU is stable with ~1% weekly mature churn.
+    non_partners: 2705    # Placeholder. Tune with your acquisition reality.
+  growth_rate_weekly_by_group:
+    partners: 0.00        # e.g., 0.01 for +1% WoW growth in new accounts
+    non_partners: 0.00
+  # When mode == series: provide explicit arrays of length = weeks (below)
+  series_by_group:
+    partners: []          # e.g., [1000, 1020, ...]
+    non_partners: []
+
+# --- COHORT CSV MODE (0–90d onboarding) ---
+cohort_csv_path: ID90 New User Signup Cohort Analysis.csv
+# The CSV is expected to be a "cohort table":
+#   first column = "cohort_date"
+#   subsequent columns = counts of returning/active users at day offsets 0..90 for that cohort.
+# The loader normalizes each row by day 0 to derive p_active_day[d], then converts to weekly WAU presence weights W_k via:
+#   W_k = 1 - Π_{i=0..6} (1 - p_active_day[7k + i])   for k in 0..12
+# and sets p_grad = p_active_day[90] as the graduation fraction to mature at day 90.
+retention_hazard_scale: 1.0  # Keep at 1.0 now; later you can tune retention by scaling hazards.
+
+# --- MATURE CHURN (APPLIES AFTER 90d) ---
+# Provide MONTHLY churn rates for **mature** active users.
+# If you only know 12-month sign-in retention R12, convert to weekly: c_w = 1 - R12^(1/52),
+# then reverse-compound to monthly: c_m = 1 - (1 - c_w)^(4.345).
+monthly_mature_churn_rate_by_group:
+  partners: 0.05           # Placeholder 5%/month → ~1.17%/week
+  non_partners: 0.06       # Placeholder 6%/month → ~1.40%/week
+
+# --- BOOKER RATE (to be calibrated) ---
+# We will fit p_book (booker_rate_weekly_by_group) using one of the calibration modes below.
+booker_rate_weekly_by_group:
+  partners: null
+  non_partners: null
+
+calibration:
+  # Mode A (default): if you have observed bookings by LOB per week, we fit p_book by least squares.
+  mode: target_annual_take   # "observed_bookings" or "target_annual_take"
+  bookings_csv_path: null    # e.g., weekly_bookings_by_lob.csv with columns: week,flights,hotels,cars,cruises
+  weeks_to_use: 12
+  non_negative: true
+  # If mode == target_annual_take, we estimate a **single** common p_book to hit this revenue target
+  # (since we have one scalar target). You can later switch to observed_bookings to fit per-group p_book.
+  target_annual_take_usd: 23000000   # <-- From your note (~$23M/year)
+
+# --- PER-BOOKER ANNUAL FREQUENCIES (FIXED) ---
+# Keep simple for now; later you can differentiate by group if needed.
+purchases_per_booker_per_year_by_lob_by_group:
+  partners:
+    flights: 7.84
+    hotels: 2.46
+    cars: 2.31
+    cruises: 1.42
+  non_partners:
+    flights: 7.84   # Will be zeroed by the flights gate below
+    hotels: 2.46
+    cars: 2.31
+    cruises: 1.42
+
+# --- LOB ECONOMICS ---
 lobs:
   flights:
     take_per_segment_usd: 2.6
@@ -10,74 +107,70 @@ lobs:
     take_per_booking_usd: 5.0
   cruises:
     take_per_booking_usd: 220.0
-user_groups:
-  active_user_share:
-    partners: 0.5
-    non_partners: 0.5
-  signup_share:
-    partners: 0.23
-    non_partners: 0.77
-active_users_12mo: 544745
-purchasers_12mo: 226443
-monthly_new_signups_total: 14000
-monthly_churn_users: 9600
-initial_mature_engaged_share: 0.8
-rates:
-  acct_create_rate: 1             # probability of users getting signed up after starting
-  new_user_retention_90d: 0.0013  # only used if use_new_user_retention_curve=false
-  booker_share_weekly: 0.01       # probability of an engaged user booking = (226,443/52)/(544745*.8)
-  weekly_engaged_churn: 0.004     # 
-historical_purchase_mix_users:
-  none: 0.4213
-  car_only: 0.02
-  cruise_only: 0.0115
-  car_cruise_only: 0.0008
-  hotel_only: 0.148
-  car_hotel: 0.053
-  cruise_hotel: 0.0095
-  cruise_hotel_car: 0.0048
-  flight_only: 0.1545
-  car_flight: 0.0185
-  cruise_flight: 0.0033
-  car_cruise_flight: 0.0007
-  hotel_flight: 0.0754
-  car_hotel_flight: 0.0614
-  cruise_hotel_flight: 0.0047
-  car_cruise_hotel_flight: 0.006
-weeks: 52
-random_seed: 42
-purchases_per_booker_per_year_by_lob_by_group:
-  partners:
-    flights: 7.84
-    hotels: 2.46
-    cars: 2.31
-    cruises: 1.42
-  non_partners:
-    flights: 7.84
-    hotels: 2.46
-    cars: 2.31
-    cruises: 1.42
-funnels_by_group:
-  partners:
-    flights: 0.184
-    hotels: 0.054
-    cars: 0.058
-    cruises: 0.012
-  non_partners:
-    flights: 0.184
-    hotels: 0.054
-    cars: 0.058
-    cruises: 0.012
-signups_weekly_baseline_by_group:
-  partners: 756
-  non_partners: 2705
-signup_growth_rate_weekly_by_group:
-  partners: 0.0
-  non_partners: 0.0
-retention_curve:
-  day_1: 0.208    # 20.8%
-  day_7: 0.060    # 6.0%
-  day_30: 0.029   # 2.9%
-  day_90: 0.008   # 0.8%
-use_new_user_retention_curve: true
 
+# --- FLIGHTS GATE (Suppression: non-partners cannot book flights) ---
+flights_gate:
+  partners: true
+  non_partners: false
+
+# --- SIMULATION HORIZON ---
+weeks: 52
+
+# ------------------------------------------------------------------------------
+# Auto-derived data (last 52 weeks) — added by assistant on request
+# These sections DO NOT change existing behavior unless your model reads them.
+# Recommended use: if present, prefer these series over baseline+growth.
+# Source files:
+#   new accounts: /mnt/data/New Accounts_data.csv
+#   12m inactivity crossers: /mnt/data/Member Churn_data.csv
+# Coverage: week_end 2024-08-11 → 2025-08-03  (52 weeks)
+# DAU/WAU sanity: 0.35 (≈ 2.45 active days per WAU)
+# ------------------------------------------------------------------------------
+
+initial_wau_by_group:
+  partners: 150000   # split of your stated WAU≈300000
+  non_partners: 150000
+
+historical_series:
+  weekly_new_accounts_by_group:
+    partners: [
+  1490.55, 1490.55, 1490.55, 1475.46, 1384.95, 1384.95, 1384.95, 1384.95, 1319.17, 1308.21, 1308.21, 1308.21,
+  1381.65, 1479.57, 1479.57, 1479.57, 1449.83, 1271.40, 1271.40, 1271.40, 1271.40, 1436.24, 1502.18, 1502.18,
+  1502.18, 1564.88, 1721.62, 1721.62, 1721.62, 1811.89, 2037.56, 2037.56, 2037.56, 2037.56, 1944.78, 1929.32,
+  1929.32, 1929.32, 1845.56, 1782.74, 1782.74, 1782.74, 1765.95, 1665.18, 1665.18, 1665.18, 1665.18, 1707.50,
+  1714.55, 1714.55, 1714.55, 979.74
+]
+    non_partners: [
+  1490.55, 1490.55, 1490.55, 1475.46, 1384.95, 1384.95, 1384.95, 1384.95, 1319.17, 1308.21, 1308.21, 1308.21,
+  1381.65, 1479.57, 1479.57, 1479.57, 1449.83, 1271.40, 1271.40, 1271.40, 1271.40, 1436.24, 1502.18, 1502.18,
+  1502.18, 1564.88, 1721.62, 1721.62, 1721.62, 1811.89, 2037.56, 2037.56, 2037.56, 2037.56, 1944.78, 1929.32,
+  1929.32, 1929.32, 1845.56, 1782.74, 1782.74, 1782.74, 1765.95, 1665.18, 1665.18, 1665.18, 1665.18, 1707.50,
+  1714.55, 1714.55, 1714.55, 979.74
+]
+  weekly_churn_12m_crossers_by_group:
+    partners: [
+  957.19, 957.19, 957.19, 960.08, 977.43, 977.43, 977.43, 977.43, 1046.50, 1058.02, 1058.02, 1058.02,
+  1038.98, 1013.60, 1013.60, 1013.60, 984.77, 811.77, 811.77, 811.77, 811.77, 987.26, 1057.45, 1057.45,
+  1057.45, 1065.79, 1086.62, 1086.62, 1086.62, 1105.87, 1153.98, 1153.98, 1153.98, 1153.98, 1093.05, 1082.90,
+  1082.90, 1082.90, 1176.87, 1247.35, 1247.35, 1247.35, 1249.96, 1265.60, 1265.60, 1265.60, 1265.60, 1187.15,
+  1174.08, 1174.08, 1174.08, 670.90
+]
+    non_partners: [
+  957.19, 957.19, 957.19, 960.08, 977.43, 977.43, 977.43, 977.43, 1046.50, 1058.02, 1058.02, 1058.02,
+  1038.98, 1013.60, 1013.60, 1013.60, 984.77, 811.77, 811.77, 811.77, 811.77, 987.26, 1057.45, 1057.45,
+  1057.45, 1065.79, 1086.62, 1086.62, 1086.62, 1105.87, 1153.98, 1153.98, 1153.98, 1153.98, 1093.05, 1082.90,
+  1082.90, 1082.90, 1176.87, 1247.35, 1247.35, 1247.35, 1249.96, 1265.60, 1265.60, 1265.60, 1265.60, 1187.15,
+  1174.08, 1174.08, 1174.08, 670.90
+]
+
+estimated_churn_from_12m_inactivity:
+  monthly_mature_churn_rate_by_group:
+    partners: 0.03088
+    non_partners: 0.03088
+  weekly_mature_churn_rate_by_group:
+    partners: 0.00719
+    non_partners: 0.00719
+
+# Note: Keep 'commercial_flights_enabled: false' to enforce non-partner flights=0.
+# Your simulator can read 'historical_series.*' to override signups/churn flows,
+# or use 'estimated_churn_from_12m_inactivity' to set mature churn rates.
