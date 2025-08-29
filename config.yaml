@@ -1,0 +1,83 @@
+time_grain: weekly
+commercial_flights_enabled: false
+lobs:
+  flights:
+    take_per_segment_usd: 2.6
+    avg_segments_per_pnr: 1.65
+  hotels:
+    take_per_booking_usd: 40.0
+  cars:
+    take_per_booking_usd: 5.0
+  cruises:
+    take_per_booking_usd: 220.0
+user_groups:
+  active_user_share:
+    partners: 0.5
+    non_partners: 0.5
+  signup_share:
+    partners: 0.23
+    non_partners: 0.77
+active_users_12mo: 544745
+purchasers_12mo: 226443
+monthly_new_signups_total: 14000
+monthly_churn_users: 9600
+initial_mature_engaged_share: 0.8
+rates:
+  acct_create_rate: 1             # probability of users getting signed up after starting
+  new_user_retention_90d: 0.0013  # only used if use_new_user_retention_curve=false
+  booker_share_weekly: 0.01       # probability of an engaged user booking = (226,443/52)/(544745*.8)
+  weekly_engaged_churn: 0.004     # 
+historical_purchase_mix_users:
+  none: 0.4213
+  car_only: 0.02
+  cruise_only: 0.0115
+  car_cruise_only: 0.0008
+  hotel_only: 0.148
+  car_hotel: 0.053
+  cruise_hotel: 0.0095
+  cruise_hotel_car: 0.0048
+  flight_only: 0.1545
+  car_flight: 0.0185
+  cruise_flight: 0.0033
+  car_cruise_flight: 0.0007
+  hotel_flight: 0.0754
+  car_hotel_flight: 0.0614
+  cruise_hotel_flight: 0.0047
+  car_cruise_hotel_flight: 0.006
+weeks: 52
+random_seed: 42
+purchases_per_booker_per_year_by_lob_by_group:
+  partners:
+    flights: 7.84
+    hotels: 2.46
+    cars: 2.31
+    cruises: 1.42
+  non_partners:
+    flights: 7.84
+    hotels: 2.46
+    cars: 2.31
+    cruises: 1.42
+funnels_by_group:
+  partners:
+    flights: 0.184
+    hotels: 0.054
+    cars: 0.058
+    cruises: 0.012
+  non_partners:
+    flights: 0.184
+    hotels: 0.054
+    cars: 0.058
+    cruises: 0.012
+signups_weekly_baseline_by_group:
+  partners: 756
+  non_partners: 2705
+signup_growth_rate_weekly_by_group:
+  partners: 0.0
+  non_partners: 0.0
+retention_curve:
+  day_1: 0.208    # 20.8%
+  day_7: 0.060    # 6.0%
+  day_30: 0.029   # 2.9%
+  day_90: 0.008   # 0.8%
+use_new_user_retention_curve: true
+
