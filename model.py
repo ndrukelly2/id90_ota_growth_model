@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 import csv
 import math
@@ -7,6 +6,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, Any
 
 import yaml
+import pandas as pd
+import numpy as np
 
 # -----------------------------
 # Helpers
@@ -37,8 +38,7 @@ def safe_get(d: dict, *keys, default=None):
 
 @dataclass
 class LOBEconomics:
-    take_per_segment_usd: float = 0.0
-    avg_segments_per_pnr: float = 1.0
+    take_per_pnr_usd: float = 0.0
     take_per_booking_usd: float = 0.0
 
 
@@ -60,15 +60,19 @@ class Params:
     retention_points: Optional[Dict[str, float]] = None
     retention_hazard_scale: float = 1.0
     W: List[float] = field(default_factory=lambda: [0.0]*13)  # weekly presence weights for ages 0..12
-    p_grad: float = 0.0  # graduation fraction at day 90
+    p_grad: float = 0.0  # graduation fraction
 
     # Mature churn
     weekly_mature_churn_rate_by_group: Dict[str, float] = field(default_factory=dict)
 
     # Booker
     booker_rate_weekly_by_group: Dict[str, Optional[float]] = field(default_factory=dict)
-    calibration_mode: str = "none"  # 'none' | 'target_annual_take'
+    calibration_mode: str = "none"  # 'none' | 'target_annual_take' | 'observed_bookings'
     target_annual_take_usd: Optional[float] = None
+    bookings_csv_path: Optional[str] = None
+    weeks_to_use: int = 52
+    calibration_shared_rate_only: bool = False
+    calibration_max_weekly_booker_rate: float = 1.0
 
     # LOB frequencies (per-booker per year) and economics
     purchases_per_booker_per_year_by_lob_by_group: Dict[str, Dict[str, float]] = field(default_factory=dict)
@@ -96,6 +100,7 @@ def load_params(config_path: str) -> Params:
         cfg = yaml.safe_load(f)
 
     weeks = int(cfg.get("weeks", 52))
+    config_dir = os.path.dirname(os.path.abspath(config_path))
 
     # 1) Initialization: WAU split
     init_wau = safe_get(cfg, "initial_wau_by_group", default=None)
@@ -109,7 +114,10 @@ def load_params(config_path: str) -> Params:
     new_accounts_series_by_group = safe_get(cfg, "historical_series", "weekly_new_accounts_by_group", default=None)
     if new_accounts_series_by_group:
         na_mode = "series"
-        na_series = new_accounts_series_by_group
+        na_series = {g: [float(x) for x in new_accounts_series_by_group.get(g, [0.0]*weeks)][:weeks] for g in GROUPS}
+        for g in GROUPS:
+            if len(na_series[g]) < weeks:
+                na_series[g].extend([0.0]*(weeks - len(na_series[g])))
     else:
         na_mode = safe_get(cfg, "new_accounts", "mode", default="baseline_growth")
         na_series = {}
@@ -127,8 +135,7 @@ def load_params(config_path: str) -> Params:
                 r = float(growth.get(g, 0.0))
                 na_series[g] = [b * ((1.0 + r) ** t) for t in range(weeks)]
 
-
-    # 3) Mature churn weekly rate (prefer estimated rates from config)
+    # 3) Mature churn weekly rate (prefer estimated weekly from config)
     weekly_churn: Dict[str, float] = {}
     est_weekly = safe_get(cfg, "estimated_churn_from_12m_inactivity", "weekly_mature_churn_rate_by_group", default={})
     if est_weekly and all(g in est_weekly for g in GROUPS):
@@ -142,6 +149,8 @@ def load_params(config_path: str) -> Params:
 
     # 4) Cohort weights W_k and graduation p_grad
     cohort_path = cfg.get("cohort_csv_path")
+    if cohort_path and not os.path.isabs(cohort_path):
+        cohort_path = os.path.join(config_dir, cohort_path)
     hazard_scale = float(cfg.get("retention_hazard_scale", 1.0))
     retention_points = cfg.get("retention_points")
 
@@ -162,13 +171,22 @@ def load_params(config_path: str) -> Params:
 
     calib_mode = safe_get(cfg, "calibration", "mode", default="none")
     target_take = safe_get(cfg, "calibration", "target_annual_take_usd", default=None)
+    bookings_csv_path = safe_get(cfg, "calibration", "bookings_csv_path", default=None)
+    if bookings_csv_path and not os.path.isabs(bookings_csv_path):
+        bookings_csv_path = os.path.join(config_dir, bookings_csv_path)
+    weeks_to_use = safe_get(cfg, "calibration", "weeks_to_use", default=52)
+    shared_rate_only = bool(safe_get(cfg, "calibration", "shared_rate_only", default=False))
+    max_weekly_booker_rate = float(safe_get(cfg, "calibration", "max_weekly_booker_rate", default=1.0))
+
     if calib_mode == "target_annual_take" and target_take is not None:
         calibration_mode = "target_annual_take"
         target_annual_take_usd = float(target_take)
+    elif calib_mode == "observed_bookings" and bookings_csv_path is not None:
+        calibration_mode = "observed_bookings"
+        target_annual_take_usd = None
     else:
         calibration_mode = "none"
         target_annual_take_usd = None
-
 
     # 6) Frequencies + economics
     freq = safe_get(cfg, "purchases_per_booker_per_year_by_lob_by_group", default={})
@@ -178,23 +196,21 @@ def load_params(config_path: str) -> Params:
     for lob in LOBS:
         lc = lobs_cfg.get(lob, {}) or {}
         lobs[lob] = LOBEconomics(
-            take_per_segment_usd=float(lc.get("take_per_segment_usd", 0.0) or 0.0),
-            avg_segments_per_pnr=float(lc.get("avg_segments_per_pnr", 1.0) or 1.0),
+            take_per_pnr_usd=float(lc.get("take_per_pnr_usd", 0.0) or 0.0),
             take_per_booking_usd=float(lc.get("take_per_booking_usd", 0.0) or 0.0),
         )
 
     flights_gate = safe_get(cfg, "flights_gate", default={"partners": True, "non_partners": False})
     dau_wau_ratio = cfg.get("dau_wau_ratio")
 
-
     return Params(
         weeks=weeks,
         initial_wau_by_group={g: float(init_wau.get(g, 0.0)) for g in GROUPS},
         new_accounts_mode=na_mode,
         new_accounts_series_by_group=na_series,
-        signups_weekly_baseline_by_group=safe_get(cfg, "new_accounts", "baseline_per_week_by_group", default={}),
-        signup_growth_rate_weekly_by_group=safe_get(cfg, "new_accounts", "growth_rate_weekly_by_group", default={}),
-        acct_create_rate=1.0, # Not in config, but kept for compatibility
+        signups_weekly_baseline_by_group=safe_get(cfg, "new_accounts", "baseline_per_week_by_group", default={}),  # type: ignore[arg-type]
+        signup_growth_rate_weekly_by_group=safe_get(cfg, "new_accounts", "growth_rate_weekly_by_group", default={}),  # type: ignore[arg-type]
+        acct_create_rate=1.0,
         cohort_use_csv=cohort_use_csv,
         cohort_csv_path=cohort_path,
         retention_points=retention_points,
@@ -205,27 +221,30 @@ def load_params(config_path: str) -> Params:
         booker_rate_weekly_by_group=p_book,
         calibration_mode=calibration_mode,
         target_annual_take_usd=target_annual_take_usd,
+        bookings_csv_path=bookings_csv_path,
+        weeks_to_use=int(weeks_to_use),
+        calibration_shared_rate_only=shared_rate_only,
+        calibration_max_weekly_booker_rate=max_weekly_booker_rate,
         purchases_per_booker_per_year_by_lob_by_group=freq,
         lobs=lobs,
         flights_gate={g: bool(flights_gate.get(g, g == "partners")) for g in GROUPS},
         dau_wau_ratio=float(dau_wau_ratio) if dau_wau_ratio is not None else None,
     )
 
+
 def _derive_presence_from_cohort_csv(csv_path: str, hazard_scale: float = 1.0) -> Tuple[List[float], float]:
     """
     Expect either:
-      A) long form with columns ['day', 'p_active_day']  (fractions 0..1)
-      B) a cohort matrix where row 0 has day offsets (0..90) and subsequent rows have counts;
-         we normalize each row by day-0 and average across cohorts to get p_active_day[d].
+      A) long form with columns ['day', 'p_active_day'] (fractions 0..1)
+      B) a cohort matrix where a non-numeric id column (e.g. 'cohort_date') is followed by numeric
+         day-offset columns '0'..'90'. We normalize each row by day-0 and average across cohorts.
     Returns (W[0..12], p_grad).
     """
-    import pandas as pd
-    df = pd.read_csv(csv_path, header=1)
-
+    df = pd.read_csv(csv_path)
     p_active_day = None
 
     # Case A: explicit columns
-    cols_lower = [c.strip().lower() for c in df.columns]
+    cols_lower = [str(c).strip().lower() for c in df.columns]
     if "day" in cols_lower and ("p_active_day" in cols_lower or "p_active" in cols_lower):
         day_col = df.columns[cols_lower.index("day")]
         p_col = df.columns[cols_lower.index("p_active_day")] if "p_active_day" in cols_lower else df.columns[cols_lower.index("p_active")]
@@ -235,54 +254,50 @@ def _derive_presence_from_cohort_csv(csv_path: str, hazard_scale: float = 1.0) -
         tmp = tmp.groupby("day", as_index=False)["p"].mean()
         p_active_day = {int(d): float(p) for d, p in zip(tmp["day"], tmp["p"])}
 
-    # Case B: cohort matrix
+    # Case B: cohort matrix with numeric day columns in the HEADER
     if p_active_day is None:
-        # Try to find the header row with numeric day offsets
-        header_row = df.iloc[0].tolist()
-        # Identify numeric columns 0..90
-        day_map = {}
-        for j, val in enumerate(header_row):
+        day_cols = []
+        for c in df.columns:
             try:
-                d = int(float(val))
+                d = int(float(str(c).strip()))
                 if 0 <= d <= 90:
-                    day_map[j] = d
+                    day_cols.append((d, c))
             except Exception:
                 continue
-        if day_map:
-            # For each subsequent row, normalize by day 0 (column with d==0) if present
+        day_cols.sort(key=lambda x: x[0])  # sort by day integer
+        if day_cols:
+            if not any(d == 0 for d, _ in day_cols):
+                # if no day-0 column, we can't normalize; fall back below
+                day_cols = []
+        if day_cols:
             series = []
-            col0 = [j for j, d in day_map.items() if d == 0]
-            if col0:
-                c0 = col0[0]
-                for i in range(1, len(df)):
-                    row = df.iloc[i].values
-                    try:
-                        base = float(row[c0])
-                        if base and base > 0:
-                            s = {}
-                            for j, d in day_map.items():
-                                try:
-                                    s[int(d)] = max(0.0, float(row[j]) / base)
-                                except Exception:
-                                    s[int(d)] = 0.0
-                            series.append(s)
-                    except Exception:
-                        continue
-                # Average across cohorts
-                p_active_day = {d: float(sum(s.get(d, 0.0) for s in series) / max(1, len(series))) for d in range(0, 91)}
-            else:
-                p_active_day = None
+            # normalize each cohort row by its day-0 column
+            day0_label = [c for d, c in day_cols if d == 0][0]
+            for _, row in df.iterrows():
+                try:
+                    base = float(row[day0_label])
+                except Exception:
+                    base = 0.0
+                if base and base > 0:
+                    s = {}
+                    for d, col in day_cols:
+                        try:
+                            s[int(d)] = max(0.0, float(row[col]) / base)
+                        except Exception:
+                            s[int(d)] = 0.0
+                    series.append(s)
+            if series:
+                p_active_day = {d: float(sum(s.get(d, 0.0) for s in series) / max(1, len(series))) for d, _ in day_cols}
 
-    # Fallback: flat small probabilities
+    # Fallback: mild exponential presence
     if p_active_day is None:
         p_active_day = {d: 0.05 * math.exp(-d / 30.0) for d in range(0, 91)}
         p_active_day[0] = 1.0
 
-    # Hazard scaling: S_target = S_base**tau -> transform per-day "p" crudely via complement exponent
-    # We interpret p_active_day as probability active on day d, and approximate the weekly union below.
+    # Hazard scaling
     if hazard_scale != 1.0:
-        for d in p_active_day:
-            p = max(0.0, min(1.0, p_active_day[d]))
+        for d in list(p_active_day.keys()):
+            p = max(0.0, min(1.0, float(p_active_day[d])))
             p_active_day[d] = 1.0 - (1.0 - p) ** hazard_scale
 
     # Weekly union presence W_k: probability seen at least once in week k (days 7k..7k+6)
@@ -296,7 +311,10 @@ def _derive_presence_from_cohort_csv(csv_path: str, hazard_scale: float = 1.0) -
         W_k = 1.0 - prod
         W.append(W_k)
 
-    p_grad = max(0.0, min(1.0, float(p_active_day.get(90, 0.0))))
+    # Graduation fraction: average presence across the last 4 onboarding weeks (ages 9..12)
+    tail = W[9:13] if len(W) >= 13 else W[-4:]
+    p_grad = float(np.mean(tail)) if tail else float(W[-1] if W else 0.0)
+    p_grad = max(0.0, min(1.0, p_grad))
     return W, p_grad
 
 
@@ -333,7 +351,9 @@ def _derive_presence_from_retention_points(points: Dict[str, float]) -> Tuple[Li
             prod *= (1.0 - p)
         W_k = 1.0 - prod
         W.append(W_k)
-    p_grad = max(0.0, min(1.0, float(daily.get(90, anchors[90]))))
+    tail = W[9:13] if len(W) >= 13 else W[-4:]
+    p_grad = float(np.mean(tail)) if tail else float(W[-1] if W else 0.0)
+    p_grad = max(0.0, min(1.0, p_grad))
     return W, p_grad
 
 
@@ -389,7 +409,7 @@ def _simulate_weeks(p: Params, p_book_override: Optional[Dict[str, float]] = Non
 
         # 4) Take
         take_by_lob = {
-            "flights": bookings_by_lob["flights"] * (p.lobs["flights"].take_per_segment_usd * p.lobs["flights"].avg_segments_per_pnr),
+            "flights": bookings_by_lob["flights"] * p.lobs["flights"].take_per_pnr_usd,
             "hotels": bookings_by_lob["hotels"] * p.lobs["hotels"].take_per_booking_usd,
             "cars": bookings_by_lob["cars"] * p.lobs["cars"].take_per_booking_usd,
             "cruises": bookings_by_lob["cruises"] * p.lobs["cruises"].take_per_booking_usd,
@@ -458,7 +478,79 @@ def _calibrate_booker_rates_for_target_take(p: Params) -> Dict[str, float]:
         scalar = 0.01
     else:
         scalar = p.target_annual_take_usd / take_with_unit
+    # Bound
+    scalar = max(0.0, min(p.calibration_max_weekly_booker_rate, scalar))
     return {g: scalar for g in GROUPS}
+
+
+def _get_potential_bookings_by_group(p: Params) -> pd.DataFrame:
+    """Helper to run a unit simulation and get potential bookings."""
+    unit_rates = {g: 1.0 for g in GROUPS}
+    rows, _ = _simulate_weeks(p, p_book_override=unit_rates)
+    
+    potential_bookings = []
+    for row in rows:
+        active_partners = row['active_partners']
+        active_non_partners = row['active_non_partners']
+        
+        potential = {'week': row['week']}
+        for g in GROUPS:
+            active = active_partners if g == 'partners' else active_non_partners
+            total_potential_bookings = 0.0
+            for lob in LOBS:
+                fpy = float(p.purchases_per_booker_per_year_by_lob_by_group.get(g, {}).get(lob, 0.0))
+                weekly_freq = fpy / 52.0
+                demand = active * weekly_freq
+                if lob == "flights" and not p.flights_gate.get(g, g == "partners"):
+                    demand = 0.0
+                total_potential_bookings += demand
+            potential[g] = total_potential_bookings
+        potential_bookings.append(potential)
+        
+    return pd.DataFrame(potential_bookings)
+
+
+def _calibrate_booker_rates_from_observed_bookings(p: Params) -> Dict[str, float]:
+    """
+    Fit p_book by regressing observed total bookings against potential bookings from each group.
+    Supports a shared-rate option for numerical stability.
+    """
+    if not p.bookings_csv_path or not os.path.exists(p.bookings_csv_path):
+        raise FileNotFoundError(f"Bookings CSV not found at {p.bookings_csv_path}")
+
+    # 1. Potential bookings under unit booker rate
+    potential_df = _get_potential_bookings_by_group(p)
+    
+    # 2. Observed bookings
+    observed_df = pd.read_csv(p.bookings_csv_path)
+    observed_df.columns = [c.lower() for c in observed_df.columns]
+    # Expect columns: week, flights, hotels, cars, cruises (case-insensitive handled above)
+    lob_cols = [c for c in observed_df.columns if c in LOBS]
+    if not lob_cols:
+        raise ValueError("Observed bookings CSV must contain LOB columns: flights, hotels, cars, cruises")
+    observed_df['bookings_total'] = observed_df[lob_cols].sum(axis=1)
+
+    # 3. Align weeks
+    weeks = min(p.weeks_to_use, len(potential_df), len(observed_df))
+    merged = pd.merge(potential_df.head(weeks), observed_df.head(weeks), on='week')
+
+    # 4. Regression
+    max_rate = float(p.calibration_max_weekly_booker_rate)
+    if p.calibration_shared_rate_only:
+        X = (merged['partners'] + merged['non_partners']).values.reshape(-1, 1)
+        y = merged['bookings_total'].values
+        # closed-form least squares for single feature
+        denom = float(np.dot(X[:,0], X[:,0]))
+        coeff = float(np.dot(X[:,0], y) / denom) if denom > 0 else 0.0
+        coeff = max(0.0, min(max_rate, coeff))
+        return {"partners": coeff, "non_partners": coeff}
+    else:
+        X = merged[['partners', 'non_partners']].values
+        y = merged['bookings_total'].values
+        coeffs, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+        c_partners = max(0.0, min(max_rate, float(coeffs[0])))
+        c_non_partners = max(0.0, min(max_rate, float(coeffs[1])))
+        return {"partners": c_partners, "non_partners": c_non_partners}
 
 
 # -----------------------------
@@ -470,11 +562,10 @@ def run_sim(config_path: str) -> List[Dict[str, Any]]:
     params = load_params(config_path)
 
     # Calibrate p_book if requested
-    needs_calib = params.calibration_mode == "target_annual_take" and any(
-        params.booker_rate_weekly_by_group.get(g) is None for g in GROUPS
-    )
-    if needs_calib:
+    if params.calibration_mode == "target_annual_take":
         p_book = _calibrate_booker_rates_for_target_take(params)
+    elif params.calibration_mode == "observed_bookings":
+        p_book = _calibrate_booker_rates_from_observed_bookings(params)
     else:
         # Use provided (fill Nones with 0)
         p_book = {g: (params.booker_rate_weekly_by_group.get(g) or 0.0) for g in GROUPS}

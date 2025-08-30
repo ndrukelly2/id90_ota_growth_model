@@ -37,8 +37,8 @@ new_accounts:
   mode: baseline_growth   # "baseline_growth" or "series"
   # When mode == baseline_growth:
   baseline_per_week_by_group:
-    partners: 756         # Placeholder. Roughly sized so WAU is stable with ~1% weekly mature churn.
-    non_partners: 2705    # Placeholder. Tune with your acquisition reality.
+    partners: 756         # Roughly sized so WAU is stable with ~1% weekly mature churn.
+    non_partners: 2705    # Tune with your acquisition reality.
   growth_rate_weekly_by_group:
     partners: 0.00        # e.g., 0.01 for +1% WoW growth in new accounts
     non_partners: 0.00
@@ -48,7 +48,7 @@ new_accounts:
     non_partners: []
 
 # --- COHORT CSV MODE (0–90d onboarding) ---
-cohort_csv_path: ID90 New User Signup Cohort Analysis.csv
+cohort_csv_path: /source data/ID90 New User Signup Cohort Analysis.csv
 # The CSV is expected to be a "cohort table":
 #   first column = "cohort_date"
 #   subsequent columns = counts of returning/active users at day offsets 0..90 for that cohort.
@@ -62,8 +62,8 @@ retention_hazard_scale: 1.0  # Keep at 1.0 now; later you can tune retention by 
 # If you only know 12-month sign-in retention R12, convert to weekly: c_w = 1 - R12^(1/52),
 # then reverse-compound to monthly: c_m = 1 - (1 - c_w)^(4.345).
 monthly_mature_churn_rate_by_group:
-  partners: 0.05           # Placeholder 5%/month → ~1.17%/week
-  non_partners: 0.06       # Placeholder 6%/month → ~1.40%/week
+  partners: 0.0025           # Placeholder 5%/month → ~1.17%/week
+  non_partners: 0.0030       # Placeholder 6%/month → ~1.40%/week
 
 # --- BOOKER RATE (to be calibrated) ---
 # We will fit p_book (booker_rate_weekly_by_group) using one of the calibration modes below.
@@ -74,12 +74,15 @@ booker_rate_weekly_by_group:
 calibration:
   # Mode A (default): if you have observed bookings by LOB per week, we fit p_book by least squares.
   mode: observed_bookings   # "observed_bookings" or "target_annual_take"
-  bookings_csv_path: weekly_bookings_by_lob.csv    # e.g., weekly_bookings_by_lob.csv with columns: week,flights,hotels,cars,cruises
-  weeks_to_use: 12
+  bookings_csv_path: source data/weekly_bookings_by_lob.csv    # e.g., weekly_bookings_by_lob.csv with columns: week,flights,hotels,cars,cruises
+  weeks_to_use: 52
   non_negative: true
   # If mode == target_annual_take, we estimate a **single** common p_book to hit this revenue target
   # (since we have one scalar target). You can later switch to observed_bookings to fit per-group p_book.
-  target_annual_take_usd: 23000000   # <-- From your note (~$23M/year)
+  #target_annual_take_usd: 23000000   # <-- From your note (~$23M/year)
+    # Stability controls for the fit.
+  shared_rate_only: true
+  max_weekly_booker_rate: 1.0
 
 # --- PER-BOOKER ANNUAL FREQUENCIES (FIXED) ---
 # Keep simple for now; later you can differentiate by group if needed.
@@ -90,7 +93,7 @@ purchases_per_booker_per_year_by_lob_by_group:
     cars: 2.31
     cruises: 1.42
   non_partners:
-    flights: 7.84   # Will be zeroed by the flights gate below
+    flights: 0.0   # Will be zeroed by the flights gate below
     hotels: 2.46
     cars: 2.31
     cruises: 1.42
@@ -98,14 +101,13 @@ purchases_per_booker_per_year_by_lob_by_group:
 # --- LOB ECONOMICS ---
 lobs:
   flights:
-    take_per_segment_usd: 2.6
-    avg_segments_per_pnr: 1.65
+    take_per_pnr_usd: 4.25
   hotels:
     take_per_booking_usd: 40.0
   cars:
     take_per_booking_usd: 5.0
   cruises:
-    take_per_booking_usd: 220.0
+    take_per_booking_usd: 160.0
 
 # --- FLIGHTS GATE (Suppression: non-partners cannot book flights) ---
 flights_gate:
