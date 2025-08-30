@@ -1,102 +1,185 @@
+# Weekly Travel Finance Simulator (Active → Bookers → Bookings → Take)
 
-# Weekly Travel Finance Simulator (Active → Bookers)
-
-This repo contains a **lean, data-anchored simulator** that projects from **Active Users (WAU)** to **Bookers**, to **Bookings by LOB**, to **Take ($)**. It aligns with your chosen simplifications:
-
-- Keep **New Accounts** as an acquisition lever
-- Initialize **Active** from **WAU**
-- Use **90-day cohort CSV** for early-life presence (0–90d) into WAU
-- Fit **booker rate `p_book`** (Mode A) while keeping per‑LOB per‑booker **frequencies fixed**
-- **Flights gate**: **Partners** can book flights; **Non‑partners** cannot (suppression; no redistribution)
-- **DAU/WAU** is used as a **sanity check** only
+This repo contains a lean, data‑anchored simulator that projects from **weekly active users (WAU)** → **bookers** → **bookings by line of business (LOB)** → **take (\$)**. It models **partners** and **non‑partners** separately and enforces a **flights gate** (non‑partners cannot book flights, by design).
 
 ---
 
-## Files
+## How it works (exact to code)
 
-- `model.py` — dataclasses, loaders, retention processing, simulator core, calibration helper.
-- `run.py` — runs the sim and writes `simulation_output.csv`.
-- `config.yaml` — assumptions & data paths (with detailed comments).
+Each simulated **week *t*** does the following for each group `g ∈ {partners, non_partners}`:
+
+1. **Compute WAU (active)**
+   `active[g,t] = mature_active[g,t] + Σ_{k=0..12} onboarding_age[g,k,t] × W[k]`
+
+* `W[k]` are weekly “seen at least once” presence weights for onboarding ages **0..12 weeks** derived from (in order of precedence):
+
+  * a cohort CSV, or
+  * four **retention\_points** anchors (days 1/7/30/90), or
+  * defaults (see Config Reference).
+* A **graduation fraction `p_grad`** (the mean of the last four `W` entries) moves age‑12 onboarding into the mature pool at the end of the week.
+
+2. **Bookers**
+   `bookers[g,t] = active[g,t] × p_book[g]`
+   `p_book[g]` is either provided or **calibrated** (see Calibration).
+
+3. **Expected bookings by LOB**
+   For each LOB ℓ in `{flights, hotels, cars, cruises}`:
+   `bookings_ℓ[t] += Σ_g bookers[g,t] × (purchases_per_booker_per_year[g,ℓ] / 52)`
+
+* **Flights gate**: if `flights_gate[g] == false`, that group’s flight demand is **suppressed** (not redistributed).
+
+4. **Take (\$)**
+   Flights use `take_per_pnr_usd`. Other LOBs use `take_per_booking_usd`. Totals are summed per week and across the run.
+
+5. **Transition to t+1**
+
+* **Graduation**: `graduates = onboarding_age[g,12,t] × p_grad`; add to `mature_active`.
+* **Mature churn**: `mature_active[g,t+1] = (mature_active[g,t] + graduates) × (1 − weekly_churn[g])`.
+* **Age onboarding**: shift ages 0→12; set new age‑0 to next week’s **new\_accounts\[g,t]**.
+
+Initial state puts all `initial_wau_by_group` into the mature pool; onboarding ages start at 0.
 
 ---
 
-## How to run
+## Calibration
+
+Two modes are implemented; choose in `config.yaml → calibration.mode`:
+
+* **`observed_bookings`** (regression):
+
+  1. Run a unit‑rate simulation (`p_book=1` for both groups) to get each group’s **potential bookings** under your WAU/retention/frequencies and flights gate.
+  2. Regress **observed total bookings** (sum of LOBs) on the two group potentials to estimate weekly `p_book` (clamped to `[0, max_weekly_booker_rate]`).
+     Options: `shared_rate_only: true` fits a single shared coefficient; `weeks_to_use` limits the fitting window.
+
+* **`target_annual_take`**:
+
+  1. Run unit‑rate simulation to compute **take with p\_book=1**.
+  2. Scale by `target_annual_take_usd / take_with_unit` to get a **single scalar booker rate** applied to both groups (bounded by `max_weekly_booker_rate`).
+
+If `mode: none`, or inputs for a chosen mode are missing, the model uses any provided `booker_rate_weekly_by_group` (filling missing with `0`).
+
+**Observed bookings CSV** expectations:
+
+* Must have a `week` column and one or more LOB columns named (case‑insensitive): `flights, hotels, cars, cruises`.
+* Weeks are aligned from the top; the first `weeks_to_use` rows are used.
+
+---
+
+## Running the simulator
 
 ```bash
 python run.py
 ```
 
-Output: `/mnt/data/simulation_output.csv` with weekly rows:
+This reads `config.yaml`, writes `simulation_output.csv`, then prints a sum of numeric columns (excluding `week`).
 
-- `week`
-- `active_partners`, `active_non_partners`
-- `bookers_partners`, `bookers_non_partners`
-- `bookings_flights`, `bookings_hotels`, `bookings_cars`, `bookings_cruises`
-- `take_usd_flights`, `take_usd_hotels`, `take_usd_cars`, `take_usd_cruises`
-- `bookings_total`, `take_usd_total`
-- `new_accounts_partners`, `new_accounts_non_partners`
+### Output columns (per week)
 
----
-
-## Key mechanics
-
-### 1) Active stock (WAU)
-
-We split **Active** into two **non-overlapping** parts per group:
-
-- **Onboarding presence (0–90d)**: From the **cohort CSV**, we compute 13 **weekly presence weights** `W_k` (k=0..12). Each new weekly cohort contributes `W_k` to WAU as it ages. After week 13 (≈ day 90), a fraction `p_grad` (the CSV’s day‑90 presence) **graduates** to the mature pool.
-- **Mature active**: Users beyond 90 days. The pool decays each week by the **weekly mature churn rate** converted from your **monthly** input.
-
-Transitions (per group):
-```
-mature[t+1] = (mature[t] + onboarding_age[12][t] * p_grad) * (1 - c_w)
-onboarding_age[k+1][t+1] = onboarding_age[k][t],  k=0..11
-onboarding_age[0][t+1] = new_accounts[t]
-active[t] = mature[t] + Σ_k onboarding_age[k][t] * W_k
-```
-
-### 2) Bookers & bookings
-
-- **Bookers**: `bookers[g,t] = active[g,t] * p_book[g]`
-- **Expected bookings** per LOB: `bookers[g,t] * (freq_per_booker_per_year[g,lob] / 52)`
-- **Flights gate**: set **non‑partner flights** demand to **0** (suppression).
-- **Take**: multiply by per‑LOB economics (flights use `take_per_segment × avg_segments_per_pnr`).
-
-### 3) Calibration of `p_book` (Mode A)
-
-Two modes are supported; the config currently defaults to **target_annual_take** for convenience:
-
-- **Observed bookings mode**: Provide a CSV of weekly bookings by LOB, the model builds a design matrix and fits `p_book[partners]`, `p_book[non_partners]` by least squares (non-negative clamp).
-- **Target annual take mode** (current default): We compute a single `p_book` such that the **total annual take** equals your provided target (e.g., $23M), then assign it to both groups.
-
-You can switch to `observed_bookings` later to get per‑group `p_book` when you have the weekly bookings CSV available.
+* `week`
+* `active_partners`, `active_non_partners`
+* `bookers_partners`, `bookers_non_partners`
+* `bookings_flights`, `bookings_hotels`, `bookings_cars`, `bookings_cruises`
+* `take_usd_flights`, `take_usd_hotels`, `take_usd_cars`, `take_usd_cruises`
+* `bookings_total`, `take_usd_total`
+* `new_accounts_partners`, `new_accounts_non_partners`
 
 ---
 
-## Tuning levers
+## Config reference (every key)
 
-- **Acquisition**: `new_accounts` baseline & growth by group.
-- **Retention (mature)**: `monthly_mature_churn_rate_by_group` (converted to weekly via compounding).
-- **Early-life presence**: comes from your **cohort CSV**; you can apply a `retention_hazard_scale` later for “what‑if” goals.
-- **Conversion**: `p_book` (calibrated); you can override directly.
-- **Intensity / Mix**: `purchases_per_booker_per_year_by_lob_by_group`.
-- **Economics**: `lobs.*` take assumptions.
-- **Flights gate**: `flights_gate` (non‑partners fixed to false per your instruction).
+> All keys live in `config.yaml`. Relative file paths are resolved relative to the config file’s directory. Unknown keys are ignored.
+
+### Global
+
+* **`time_grain`**: string, currently informational. Only `weekly` is implemented.
+* **`weeks`**: integer simulation horizon; default `52`.
+
+### Groups & initialization
+
+* **`user_groups.active_user_share`**: `{partners: float, non_partners: float}` used **only** to split `initial_wau_total` when `initial_wau_by_group` is not provided. Defaults to `{0.5, 0.5}`.
+* **`initial_wau_total`**: integer WAU total to split by `active_user_share`. Default `300000` if both this and `initial_wau_by_group` are absent.
+* **`initial_wau_by_group`**: dict of per‑group WAU; when provided, overrides `initial_wau_total`.
+* **`dau_wau_ratio`**: optional float for **sanity only** (no effect on simulation). Presently not printed by `run.py`—keep as a reference.
+
+### New accounts (signup inflow)
+
+Two mutually exclusive ways to provide weekly new accounts by group:
+
+1. **Historical series (preferred if present)**
+   `historical_series.weekly_new_accounts_by_group`: arrays of length ≥ `weeks` for each group. The simulator truncates/zero‑pads to `weeks`.
+2. **`new_accounts.mode`**
+
+   * `mode: baseline_growth`
+
+     * `baseline_per_week_by_group`: starting weekly signups per group.
+     * `growth_rate_weekly_by_group`: multiplicative WoW growth per group (e.g., `0.01` for +1%/wk).
+       The generated series is `baseline × (1+growth)^t` for `t=0..weeks-1`.
+   * `mode: series`
+
+     * `series_by_group`: explicit arrays per group (length ≥ `weeks` recommended); truncated/zero‑padded if shorter.
+
+### Early‑life presence (0–90d into WAU)
+
+Provide **one** of the following;
+
+* **`cohort_csv_path`**: path to a cohort matrix (ID column + day‑offset numeric columns `0..90`) **or** a long‑form table with `day` and `p_active_day` columns. The loader normalizes by day‑0, averages across cohorts, then builds weekly “union presence” weights `W[0..12]`.
+  Optional: **`retention_hazard_scale`** (float ≥0) scales daily presence via `p' = 1 − (1 − p)^scale` before computing `W`.
+* **`retention_points`**: dictionary with anchors `{day_1, day_7, day_30, day_90}` (interpreted as daily presence/survival). A smooth curve is built in log‑space between anchors, then `W` and `p_grad` are derived as above.
+
+If neither is provided, defaults are used:
+`W = [0.25, 0.18, 0.18, 0.18, 0.12, 0.12, 0.12, 0.12, 0.08, 0.08, 0.08, 0.08, 0.08]` and `p_grad = 0.02`.
+
+> **Note on graduation**: `p_grad` is the **average of `W[9..12]`** (the last four onboarding weeks), not simply day‑90 presence. This matches the code.
+
+### Mature churn (post‑90d)
+
+* Preferred direct weekly input: **`estimated_churn_from_12m_inactivity.weekly_mature_churn_rate_by_group`** `{partners, non_partners}`.
+* Otherwise, provide **`monthly_mature_churn_rate_by_group`**; the simulator converts to weekly via compounding:
+  `weekly = 1 − (1 − monthly)^(1/4.345)`.
+* If neither is supplied, the model falls back to a monthly `0.03` and converts it.
+
+### Booker rate (conversion)
+
+* **`booker_rate_weekly_by_group`**: `{partners, non_partners}`. Used only when `calibration.mode` is `none` or calibration inputs are missing.
+
+### Calibration block
+
+* **`calibration.mode`**: one of `observed_bookings`, `target_annual_take`, `none` (code default is `none`).
+* **`calibration.bookings_csv_path`**: path to observed weekly bookings by LOB (columns: `week, flights, hotels, cars, cruises`). Required for `observed_bookings`.
+* **`calibration.weeks_to_use`**: integer; default `52`.
+* **`calibration.shared_rate_only`**: boolean; fit a single shared `p_book` across groups (stability option).
+* **`calibration.max_weekly_booker_rate`**: float cap; default `1.0`.
+* **`calibration.target_annual_take_usd`**: positive float; required for `target_annual_take`.
+
+### Frequencies (intensity) & economics
+
+* **`purchases_per_booker_per_year_by_lob_by_group`**: for each group and LOB, the average purchases per booker per year. These are treated as **fixed** in the current model; booker rate calibration does **not** change them.
+* **`lobs`**: per‑LOB economics:
+
+  * `flights.take_per_pnr_usd`
+  * `hotels.take_per_booking_usd`
+  * `cars.take_per_booking_usd`
+  * `cruises.take_per_booking_usd`
+
+### Flights gate
+
+* **`flights_gate`**: `{partners: true|false, non_partners: true|false}`; if `false` for a group, that group’s **flights** demand is set to **0** (suppression; not redistributed). Default `{partners: true, non_partners: false}`.
 
 ---
 
-## DAU/WAU sanity check
+## Assumptions & scope
 
-If you set `dau_wau_ratio`, the runner prints the implied average active days per WAU.
-Use this qualitatively to check whether your churn + `p_book` feel plausible.
+* No seasonality, no randomness (all expectations).
+* Two groups (`partners`, `non_partners`) and four LOBs are hard‑coded.
+* Initial WAU starts fully mature; future extension could seed onboarding history.
 
----
+## Tips
 
-## Notes & assumptions
+* When switching to `observed_bookings`, ensure the CSV week indexing aligns with the model’s week 1..`weeks`.
+* Use `shared_rate_only: true` initially if your observed data are noisy; relax later.
 
-- The cohort CSV is interpreted as **counts of active/returning users by day offset** per signup date.
-  We normalize by day‑0 to get per‑day activity probabilities, average across cohorts,
-  then map to weekly presence weights `W_k` via a union‑of‑days approximation.
-- Graduation to mature at day‑90 uses `p_grad = p_active_day[90]`. You can refine this once you agree on the exact graduation rule.
-- Flights demand for **non‑partners** is **suppressed** (not redistributed).
-- No seasonality or randomness is included yet; hooks can be added later.
+## Repository map
+
+* `model.py` — dataclasses, loaders, retention processing, simulator core, calibration helpers.
+* `run.py` — CLI runner that writes `simulation_output.csv` and prints totals.
+* `config.yaml` — your assumptions & data paths (commented example filled in).
