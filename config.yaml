@@ -73,7 +73,7 @@ booker_rate_weekly_by_group:
 
 calibration:
   # Mode A (default): if you have observed bookings by LOB per week, we fit p_book by least squares.
-  mode: observed_bookings   # "observed_bookings" or "target_annual_take"
+  mode: target_annual_take   # "observed_bookings" or "target_annual_take"
   bookings_csv_path: source data/weekly_bookings_by_lob.csv    # e.g., weekly_bookings_by_lob.csv with columns: week,flights,hotels,cars,cruises
   weeks_to_use: 52
   non_negative: true
