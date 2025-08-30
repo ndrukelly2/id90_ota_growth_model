@@ -18,8 +18,8 @@ user_groups:
   # Share of initial WAU by group when only a total WAU is provided.
   # If you have exact per-group WAU, set those below and ignore this share.
   active_user_share:
-    partners: 0.5
-    non_partners: 0.5
+    partners: 0.6
+    non_partners: 0.4
 
 # Initialize from WAU (7-day actives). Replace with your latest measured WAU.
 # If you have per-group WAU, set `initial_wau_by_group`; otherwise set `initial_wau_total`.
@@ -62,8 +62,8 @@ retention_hazard_scale: 1.0  # Keep at 1.0 now; later you can tune retention by 
 # If you only know 12-month sign-in retention R12, convert to weekly: c_w = 1 - R12^(1/52),
 # then reverse-compound to monthly: c_m = 1 - (1 - c_w)^(4.345).
 monthly_mature_churn_rate_by_group:
-  partners: 0.0025           # Placeholder 5%/month → ~1.17%/week
-  non_partners: 0.0030       # Placeholder 6%/month → ~1.40%/week
+  partners: 0.0025           # 2.5%/month 
+  non_partners: 0.0030       # 3.0%/month 
 
 # --- BOOKER RATE (to be calibrated) ---
 # We will fit p_book (booker_rate_weekly_by_group) using one of the calibration modes below.
@@ -83,6 +83,7 @@ calibration:
     # Stability controls for the fit.
   shared_rate_only: true
   max_weekly_booker_rate: 1.0
+  target_annual_take_usd: 23500000
 
 # --- PER-BOOKER ANNUAL FREQUENCIES (FIXED) ---
 # Keep simple for now; later you can differentiate by group if needed.
@@ -91,17 +92,17 @@ purchases_per_booker_per_year_by_lob_by_group:
     flights: 7.84
     hotels: 2.46
     cars: 2.31
-    cruises: 1.42
+    cruises: 1.2
   non_partners:
     flights: 0.0   # Will be zeroed by the flights gate below
     hotels: 2.46
     cars: 2.31
-    cruises: 1.42
+    cruises: 1.2
 
 # --- LOB ECONOMICS ---
 lobs:
   flights:
-    take_per_pnr_usd: 4.25
+    take_per_pnr_usd: 4.42
   hotels:
     take_per_booking_usd: 40.0
   cars:
