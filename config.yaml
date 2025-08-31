@@ -10,7 +10,6 @@
 #   - DAU/WAU used only as a sanity check (no direct effect on the sim)
 # ===========================
 
-
 time_grain: weekly
 
 # --- GROUPS & INITIALIZATION ---
@@ -55,7 +54,7 @@ cohort_csv_path: /source data/ID90 New User Signup Cohort Analysis.csv
 # The loader normalizes each row by day 0 to derive p_active_day[d], then converts to weekly WAU presence weights W_k via:
 #   W_k = 1 - Π_{i=0..6} (1 - p_active_day[7k + i])   for k in 0..12
 # and sets p_grad = p_active_day[90] as the graduation fraction to mature at day 90.
-retention_hazard_scale: 1.0  # Keep at 1.0 now; later you can tune retention by scaling hazards.
+retention_hazard_scale: 0.9  # Keep at 1.0 now; later you can tune retention by scaling hazards.
 
 # --- MATURE CHURN (APPLIES AFTER 90d) ---
 # Provide MONTHLY churn rates for **mature** active users.
@@ -73,7 +72,7 @@ booker_rate_weekly_by_group:
 
 calibration:
   # Mode A (default): if you have observed bookings by LOB per week, we fit p_book by least squares.
-  mode: target_annual_take   # "observed_bookings" or "target_annual_take"
+  mode: observed_bookings   # "observed_bookings" or "target_annual_take"
   bookings_csv_path: source data/weekly_bookings_by_lob.csv    # e.g., weekly_bookings_by_lob.csv with columns: week,flights,hotels,cars,cruises
   weeks_to_use: 52
   non_negative: true
@@ -89,26 +88,26 @@ calibration:
 # Keep simple for now; later you can differentiate by group if needed.
 purchases_per_booker_per_year_by_lob_by_group:
   partners:
-    flights: 7.84
-    hotels: 2.46
-    cars: 2.31
-    cruises: 1.2
+    flights: 11.26
+    hotels: 1.16
+    cars: 0.50
+    cruises: 0.08
   non_partners:
     flights: 0.0   # Will be zeroed by the flights gate below
-    hotels: 2.46
-    cars: 2.31
-    cruises: 1.2
+    hotels: 1.16
+    cars: 0.5
+    cruises: 0.08
 
 # --- LOB ECONOMICS ---
 lobs:
   flights:
-    take_per_pnr_usd: 4.42
+    take_per_pnr_usd: 4.75
   hotels:
-    take_per_booking_usd: 40.0
+    take_per_booking_usd: 45.0
   cars:
-    take_per_booking_usd: 5.0
+    take_per_booking_usd: 5.5
   cruises:
-    take_per_booking_usd: 160.0
+    take_per_booking_usd: 200.0
 
 # --- FLIGHTS GATE (Suppression: non-partners cannot book flights) ---
 flights_gate:

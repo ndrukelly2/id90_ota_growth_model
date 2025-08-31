@@ -19,6 +19,18 @@ def main():
     print("\nTotals from simulation_output.csv:")
     # The 'week' column is not a metric to be summed, so we drop it.
     print(df.drop(columns=['week']).sum())
+        # Estimated booker conversion rates over the run (bookers / active)
+    tot_active_p = df['active_partners'].sum()
+    tot_active_np = df['active_non_partners'].sum()
+    conv_p = (df['bookers_partners'].sum() / tot_active_p) if tot_active_p else 0.0
+    conv_np = (df['bookers_non_partners'].sum() / tot_active_np) if tot_active_np else 0.0
+
+    print("\nEstimated booker conversion rate(s) per week:")
+    if abs(conv_p - conv_np) < 1e-12:
+        print(f"  shared p_book: {conv_p:.6f}")
+    else:
+        print(f"  partners:     {conv_p:.6f}")
+        print(f"  non_partners: {conv_np:.6f}")
 
 
 if __name__ == '__main__':
