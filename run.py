@@ -32,6 +32,22 @@ def main():
         print(f"  partners:     {conv_p:.6f}")
         print(f"  non_partners: {conv_np:.6f}")
 
+    # Print total_take
+    total_take = df['take_usd_total'].sum()
+    print(f"\nTotal take_usd_total: {total_take:,.2f}")
+
+    # Print avg new_users/week
+    avg_new_users = (df['new_accounts_partners'] + df['new_accounts_non_partners']).mean()
+    print(f"Avg new users/week: {avg_new_users:.2f}")
+
+    # Print avg churn/week (if churn column exists)
+    churn_cols = [col for col in df.columns if 'churn' in col.lower()]
+    if churn_cols:
+        avg_churn = df[churn_cols].sum(axis=1).mean()
+        print(f"Avg churn/week: {avg_churn:.2f}")
+    else:
+        print("Avg churn/week: [No churn column found]")
+
 
 if __name__ == '__main__':
     main()

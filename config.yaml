@@ -11,6 +11,9 @@
 # ===========================
 
 time_grain: weekly
+weeks_per_month: 4.34 # used to convert weekly metrics to monthly
+# --- SIMULATION HORIZON ---
+weeks: 52
 
 # --- GROUPS & INITIALIZATION ---
 user_groups:
@@ -54,7 +57,7 @@ cohort_csv_path: /source data/ID90 New User Signup Cohort Analysis.csv
 # The loader normalizes each row by day 0 to derive p_active_day[d], then converts to weekly WAU presence weights W_k via:
 #   W_k = 1 - Π_{i=0..6} (1 - p_active_day[7k + i])   for k in 0..12
 # and sets p_grad = p_active_day[90] as the graduation fraction to mature at day 90.
-retention_hazard_scale: 0.9  # Keep at 1.0 now; later you can tune retention by scaling hazards.
+retention_hazard_scale: 1.1  # Keep at 1.0 now; later you can tune retention by scaling hazards.
 
 # --- MATURE CHURN (APPLIES AFTER 90d) ---
 # Provide MONTHLY churn rates for **mature** active users.
@@ -66,13 +69,14 @@ monthly_mature_churn_rate_by_group:
 
 # --- BOOKER RATE (to be calibrated) ---
 # We will fit p_book (booker_rate_weekly_by_group) using one of the calibration modes below.
+# Once calibrated, we can set this value here and play with other variables to assess their impact
 booker_rate_weekly_by_group:
-  partners: null
-  non_partners: null
+  partners: 0.761991
+  non_partners: 0.761991
 
 calibration:
   # Mode A (default): if you have observed bookings by LOB per week, we fit p_book by least squares.
-  mode: observed_bookings   # "observed_bookings" or "target_annual_take"
+  mode: none   # "observed_bookings" or "target_annual_take" or "none" to test vars
   bookings_csv_path: source data/weekly_bookings_by_lob.csv    # e.g., weekly_bookings_by_lob.csv with columns: week,flights,hotels,cars,cruises
   weeks_to_use: 52
   non_negative: true
@@ -113,9 +117,6 @@ lobs:
 flights_gate:
   partners: true
   non_partners: false
-
-# --- SIMULATION HORIZON ---
-weeks: 52
 
 # ------------------------------------------------------------------------------
 # Auto-derived data (last 52 weeks) — added by assistant on request
