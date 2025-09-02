@@ -15,7 +15,7 @@ time_grain: weekly
 weeks_per_month: 4.34 # used to convert weekly metrics to monthly
 # --- BASELINE CALIBRATION OUTPUT ---
 # --- The output of our initial baseline calibration run should be entered here. Only used for delta calcs ---
-baseline_total_take_usd: 22359972
+baseline_total_take_usd: 22241381
 # --- SIMULATION HORIZON ---
 weeks: 52
 
@@ -81,8 +81,8 @@ retention_hazard_scale: 1.0  # Keep at 1.0 now; later you can tune retention by 
 # If you only know 12-month sign-in retention R12, convert to weekly: c_w = 1 - R12^(1/52),
 # then reverse-compound to monthly: c_m = 1 - (1 - c_w)^(4.345).
 monthly_mature_churn_rate_by_group:
-  partners:    0.00648   # ≈ 0.65% weekly
-  non_partners: 0.00778  # ≈ 0.78% weekly
+  partners: 0.025
+  non_partners: 0.045
 # --- MATURE CHURN ADJUSTMENTS (APPLIES AFTER 90d) ---
 # Scale mature churn rates by this factor after 90 days to assess impact.
 # Note: Calibration mode must be "none" and an actual p_book must be set.
@@ -94,12 +94,12 @@ mature_churn_scale_by_group:
 # We will fit p_book (booker_rate_weekly_by_group) using one of the calibration modes below.
 # Once calibrated, we can set this value here and play with other variables to assess their impact
 booker_rate_weekly_by_group:
-  partners: null #0.758569
-  non_partners: null #0.758569
+  partners: 0.862229 #0.758569
+  non_partners: 0.862229 #0.758569
 
 calibration:
   # Mode A (default): if you have observed bookings by LOB per week, we fit p_book by least squares.
-  mode: "observed_bookings"   # "observed_bookings" or "target_annual_take" or "none" to test vars
+  mode: "none"   # "observed_bookings" or "target_annual_take" or "none" to test vars
   bookings_csv_path: "C:/Users/ndruk/ID90/id90_ota_growth_model/source data/weekly_bookings_by_lob.csv"    # e.g., weekly_bookings_by_lob.csv with columns: week,flights,hotels,cars,cruises
   weeks_to_use: 52
   non_negative: true
@@ -139,13 +139,13 @@ product_mix_scale_by_lob_by_group:
 # --- LOB ECONOMICS: DO NOT CHANGE ---
 lobs:
   flights:
-    take_per_pnr_usd: 4.75
+    take_per_pnr_usd: 5.00
   hotels:
     take_per_booking_usd: 45.0
   cars:
     take_per_booking_usd: 5.5
   cruises:
-    take_per_booking_usd: 200.0
+    take_per_booking_usd: 220.0
 
 
 # --- FLIGHTS GATE (Suppression: non-partners cannot book flights) ---
