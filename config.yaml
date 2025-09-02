@@ -31,8 +31,8 @@ user_groups:
 # If you have per-group WAU, set `initial_wau_by_group`; otherwise set `initial_wau_total`.
 initial_wau_total: 300000    # <-- From your note: 7-day MAU/WAU ≈ 300k
 initial_wau_by_group:
-  partners: null             # set integers to override shares, e.g., 160000
-  non_partners: null
+  partners: 180000             # set integers to override shares, e.g., 160000
+  non_partners: 120000
 
 # Optional DAU/WAU sanity check (no simulation impact). If provided, the runner will print a check.
 dau_wau_ratio: 0.35          # <-- From your note (≈ 35%). Implies ~2.45 active days/week per WAU.
