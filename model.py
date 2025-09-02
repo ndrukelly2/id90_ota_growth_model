@@ -372,6 +372,11 @@ def _derive_presence_from_retention_points(points: Dict[str, float]) -> Tuple[Li
         W_k = 1.0 - prod
         W.append(W_k)
     tail = W[9:13] if len(W) >= 13 else W[-4:]
+    if tail:
+        p_grad = 1.0 - np.prod([1.0 - w for w in tail])   # union, not mean
+    else:
+        p_grad = W[-1] if W else 0.0
+    p_grad = float(np.clip(p_grad, 0.0, 1.0))
     p_grad = float(np.mean(tail)) if tail else float(W[-1] if W else 0.0)
     p_grad = max(0.0, min(1.0, p_grad))
     return W, p_grad

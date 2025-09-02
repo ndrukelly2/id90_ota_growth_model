@@ -11,7 +11,12 @@ def main():
 
     print("\nTotals from simulation_output.csv:")
     # The 'week' column is not a metric to be summed, so we drop it.
-    print(df.drop(columns=['week']).sum())
+    #print(df.drop(columns=['week']).sum())
+    rate_cols = [c for c in df.columns if c.startswith('churn_rate')]
+    count_cols = [c for c in df.columns if c not in rate_cols + ['week']]
+    print("Totals (counts/values):\n", df[count_cols].sum(numeric_only=True))
+    print("Means (rates):\n", df[rate_cols].mean(numeric_only=True))
+
         # Estimated booker conversion rates over the run (bookers / active)
     tot_active_p = df['active_partners'].sum()
     tot_active_np = df['active_non_partners'].sum()
@@ -46,12 +51,13 @@ def main():
     print(f"Avg new users/week: {avg_new_users:.2f}")
 
     # Print avg churn/week (if churn column exists)
-    churn_cols = [col for col in df.columns if 'churn' in col.lower()]
-    if churn_cols:
-        avg_churn = df[churn_cols].sum(axis=1).mean()
-        print(f"Avg churn/week: {avg_churn:.2f}")
+    if 'churned_total' in df.columns:
+        avg_churn = df['churned_total'].mean()
+    elif {'churned_partners','churned_non_partners'}.issubset(df.columns):
+        avg_churn = (df['churned_partners'] + df['churned_non_partners']).mean()
     else:
-        print("Avg churn/week: [No churn column found]")
+        avg_churn = float('nan')
+    print(f"Avg churn/week: {avg_churn:.2f}")
 
 
 if __name__ == '__main__':

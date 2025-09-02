@@ -81,8 +81,8 @@ retention_hazard_scale: 1.0  # Keep at 1.0 now; later you can tune retention by 
 # If you only know 12-month sign-in retention R12, convert to weekly: c_w = 1 - R12^(1/52),
 # then reverse-compound to monthly: c_m = 1 - (1 - c_w)^(4.345).
 monthly_mature_churn_rate_by_group:
-  partners: 0.0025           # 2.5%/month 
-  non_partners: 0.0030       # 3.0%/month 
+  partners:    0.00648   # ≈ 0.65% weekly
+  non_partners: 0.00778  # ≈ 0.78% weekly
 # --- MATURE CHURN ADJUSTMENTS (APPLIES AFTER 90d) ---
 # Scale mature churn rates by this factor after 90 days to assess impact.
 # Note: Calibration mode must be "none" and an actual p_book must be set.
