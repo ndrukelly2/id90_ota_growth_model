@@ -146,6 +146,11 @@ def load_params(config_path: str) -> Params:
             weekly_churn = {g: monthly_to_weekly_rate(float(monthly.get(g, 0.0))) for g in GROUPS}
         else:
             weekly_churn = {g: monthly_to_weekly_rate(0.03) for g in GROUPS}
+    scale_by_group = safe_get(cfg, "mature_churn_scale_by_group", default={}) or {}
+    if scale_by_group:
+        for g in GROUPS:
+            s = float(scale_by_group.get(g, 1.0))
+            weekly_churn[g] = max(0.0, min(1.0, weekly_churn.get(g, 0.0) * s))
 
     # 4) Cohort weights W_k and graduation p_grad
     cohort_path = cfg.get("cohort_csv_path")
@@ -153,7 +158,7 @@ def load_params(config_path: str) -> Params:
         cohort_path = os.path.join(config_dir, cohort_path)
     hazard_scale = float(cfg.get("retention_hazard_scale", 1.0))
     retention_points = cfg.get("retention_points")
-
+    print(cohort_path)
     if cohort_path and os.path.exists(cohort_path):
         W, p_grad = _derive_presence_from_cohort_csv(cohort_path, hazard_scale)
         cohort_use_csv = True
@@ -190,6 +195,21 @@ def load_params(config_path: str) -> Params:
 
     # 6) Frequencies + economics
     freq = safe_get(cfg, "purchases_per_booker_per_year_by_lob_by_group", default={})
+    # Apply optional product-mix scaling (by lob and optionally by group)
+    product_mix_scale = safe_get(cfg, "product_mix_scale_by_lob_by_group", default={}) or {}
+    if product_mix_scale:
+        scaled_freq: Dict[str, Dict[str, float]] = {}
+        for g in GROUPS:
+            scaled_freq[g] = {}
+            for lob in LOBS:
+                base = float((freq.get(g, {}) or {}).get(lob, 0.0))
+                s = product_mix_scale.get(lob, 1.0)
+                if isinstance(s, dict):
+                    s_val = float(s.get(g, 1.0))
+                else:
+                    s_val = float(s)
+                scaled_freq[g][lob] = max(0.0, base * s_val)
+        freq = scaled_freq
     lobs_cfg = safe_get(cfg, "lobs", default={})
 
     lobs: Dict[str, LOBEconomics] = {}
@@ -417,6 +437,16 @@ def _simulate_weeks(p: Params, p_book_override: Optional[Dict[str, float]] = Non
         take_total = sum(take_by_lob.values())
         total_take += take_total
 
+        # Compute churn counts for reporting (mature pool + this week's graduates)
+        churn_counts = {}
+        churn_rates = {}
+        for g in GROUPS:
+            # graduates join the mature pool this week, then churn applies
+            graduates = state.onboarding_age[g][12] * p.p_grad
+            cw = float(p.weekly_mature_churn_rate_by_group.get(g, 0.0))
+            churn_rates[g] = cw
+            churn_counts[g] = (state.mature_active[g] + graduates) * cw
+
         # 5) Emit row
         row = {
             "week": t + 1,
@@ -436,6 +466,11 @@ def _simulate_weeks(p: Params, p_book_override: Optional[Dict[str, float]] = Non
             "take_usd_total": take_total,
             "new_accounts_partners": p.new_accounts_series_by_group["partners"][t] if p.new_accounts_series_by_group.get("partners") else 0.0,
             "new_accounts_non_partners": p.new_accounts_series_by_group["non_partners"][t] if p.new_accounts_series_by_group.get("non_partners") else 0.0,
+            "churn_rate_partners": churn_rates["partners"],
+            "churn_rate_non_partners": churn_rates["non_partners"],
+            "churned_partners": churn_counts["partners"],
+            "churned_non_partners": churn_counts["non_partners"],
+            "churned_total": churn_counts["partners"] + churn_counts["non_partners"],
         }
         rows.append(row)
 

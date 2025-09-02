@@ -1,17 +1,10 @@
 import pandas as pd
+import yaml
 from model import run_sim
 
 def main():
     rows = run_sim('config.yaml')
-    df = pd.DataFrame(rows, columns=[
-        'week',
-        'active_partners','active_non_partners',
-        'bookers_partners','bookers_non_partners',
-        'bookings_flights','bookings_hotels','bookings_cars','bookings_cruises',
-        'take_usd_flights','take_usd_hotels','take_usd_cars','take_usd_cruises',
-        'bookings_total','take_usd_total',
-        'new_accounts_partners','new_accounts_non_partners'
-    ])
+    df = pd.DataFrame(rows)
     out_path = 'simulation_output.csv'
     df.to_csv(out_path, index=False)
     print(f'Wrote {out_path}')
@@ -35,6 +28,18 @@ def main():
     # Print total_take
     total_take = df['take_usd_total'].sum()
     print(f"\nTotal take_usd_total: {total_take:,.2f}")
+
+    # If baseline_total_take_usd provided in config, print delta
+    try:
+        with open('config.yaml', 'r') as _f:
+            _cfg = yaml.safe_load(_f) or {}
+        _baseline = float(_cfg.get('baseline_total_take_usd', 0) or 0)
+    except Exception:
+        _baseline = 0.0
+    if _baseline > 0:
+        _delta = float(total_take) - _baseline
+        _pct = (_delta / _baseline) * 100.0
+        print(f"Vs baseline ${_baseline:,.2f}: Δ ${_delta:,.2f} ({_pct:+.2f}%)")
 
     # Print avg new_users/week
     avg_new_users = (df['new_accounts_partners'] + df['new_accounts_non_partners']).mean()
