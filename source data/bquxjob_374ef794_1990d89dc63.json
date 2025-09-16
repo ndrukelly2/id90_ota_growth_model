@@ -1,0 +1,1369 @@
+[{
+  "platform": "ANDROID",
+  "week_start": "2024-01-01",
+  "mature_active": "72",
+  "mature_churners": "14",
+  "mature_churn_rate_week": "0.19444444444444445"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-01-08",
+  "mature_active": "107",
+  "mature_churners": "39",
+  "mature_churn_rate_week": "0.3644859813084112"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-01-15",
+  "mature_active": "100",
+  "mature_churners": "43",
+  "mature_churn_rate_week": "0.43"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-01-22",
+  "mature_active": "93",
+  "mature_churners": "39",
+  "mature_churn_rate_week": "0.41935483870967744"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-01-29",
+  "mature_active": "104",
+  "mature_churners": "48",
+  "mature_churn_rate_week": "0.46153846153846156"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-02-05",
+  "mature_active": "98",
+  "mature_churners": "43",
+  "mature_churn_rate_week": "0.43877551020408162"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-02-12",
+  "mature_active": "101",
+  "mature_churners": "44",
+  "mature_churn_rate_week": "0.43564356435643564"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-02-19",
+  "mature_active": "135",
+  "mature_churners": "51",
+  "mature_churn_rate_week": "0.37777777777777777"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-02-26",
+  "mature_active": "119",
+  "mature_churners": "46",
+  "mature_churn_rate_week": "0.38655462184873951"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-03-04",
+  "mature_active": "136",
+  "mature_churners": "47",
+  "mature_churn_rate_week": "0.34558823529411764"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-03-11",
+  "mature_active": "157",
+  "mature_churners": "79",
+  "mature_churn_rate_week": "0.50318471337579618"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-03-18",
+  "mature_active": "134",
+  "mature_churners": "59",
+  "mature_churn_rate_week": "0.44029850746268656"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-03-25",
+  "mature_active": "158",
+  "mature_churners": "81",
+  "mature_churn_rate_week": "0.51265822784810122"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-04-01",
+  "mature_active": "157",
+  "mature_churners": "64",
+  "mature_churn_rate_week": "0.40764331210191085"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-04-08",
+  "mature_active": "136",
+  "mature_churners": "61",
+  "mature_churn_rate_week": "0.4485294117647059"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-04-15",
+  "mature_active": "160",
+  "mature_churners": "65",
+  "mature_churn_rate_week": "0.40625"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-04-22",
+  "mature_active": "161",
+  "mature_churners": "89",
+  "mature_churn_rate_week": "0.55279503105590067"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-04-29",
+  "mature_active": "185",
+  "mature_churners": "87",
+  "mature_churn_rate_week": "0.4702702702702703"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-05-06",
+  "mature_active": "180",
+  "mature_churners": "83",
+  "mature_churn_rate_week": "0.46111111111111114"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-05-13",
+  "mature_active": "174",
+  "mature_churners": "84",
+  "mature_churn_rate_week": "0.48275862068965519"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-05-20",
+  "mature_active": "184",
+  "mature_churners": "104",
+  "mature_churn_rate_week": "0.56521739130434778"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-05-27",
+  "mature_active": "188",
+  "mature_churners": "77",
+  "mature_churn_rate_week": "0.40957446808510639"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-06-03",
+  "mature_active": "207",
+  "mature_churners": "91",
+  "mature_churn_rate_week": "0.43961352657004832"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-06-10",
+  "mature_active": "214",
+  "mature_churners": "87",
+  "mature_churn_rate_week": "0.40654205607476634"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-06-17",
+  "mature_active": "249",
+  "mature_churners": "90",
+  "mature_churn_rate_week": "0.36144578313253012"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-06-24",
+  "mature_active": "260",
+  "mature_churners": "103",
+  "mature_churn_rate_week": "0.39615384615384613"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-07-01",
+  "mature_active": "276",
+  "mature_churners": "107",
+  "mature_churn_rate_week": "0.38768115942028986"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-07-08",
+  "mature_active": "313",
+  "mature_churners": "117",
+  "mature_churn_rate_week": "0.37380191693290737"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-07-15",
+  "mature_active": "299",
+  "mature_churners": "103",
+  "mature_churn_rate_week": "0.34448160535117056"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-07-22",
+  "mature_active": "360",
+  "mature_churners": "139",
+  "mature_churn_rate_week": "0.38611111111111113"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-07-29",
+  "mature_active": "352",
+  "mature_churners": "104",
+  "mature_churn_rate_week": "0.29545454545454547"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-08-05",
+  "mature_active": "344",
+  "mature_churners": "104",
+  "mature_churn_rate_week": "0.30232558139534882"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-08-12",
+  "mature_active": "356",
+  "mature_churners": "117",
+  "mature_churn_rate_week": "0.32865168539325845"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-08-19",
+  "mature_active": "391",
+  "mature_churners": "135",
+  "mature_churn_rate_week": "0.34526854219948849"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-08-26",
+  "mature_active": "382",
+  "mature_churners": "127",
+  "mature_churn_rate_week": "0.33246073298429318"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-09-02",
+  "mature_active": "463",
+  "mature_churners": "226",
+  "mature_churn_rate_week": "0.48812095032397407"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-09-09",
+  "mature_active": "346",
+  "mature_churners": "154",
+  "mature_churn_rate_week": "0.44508670520231214"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-09-16",
+  "mature_active": "355",
+  "mature_churners": "178",
+  "mature_churn_rate_week": "0.50140845070422535"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-09-23",
+  "mature_active": "330",
+  "mature_churners": "156",
+  "mature_churn_rate_week": "0.47272727272727272"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-09-30",
+  "mature_active": "303",
+  "mature_churners": "141",
+  "mature_churn_rate_week": "0.46534653465346537"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-10-07",
+  "mature_active": "323",
+  "mature_churners": "168",
+  "mature_churn_rate_week": "0.52012383900928794"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-10-14",
+  "mature_active": "316",
+  "mature_churners": "161",
+  "mature_churn_rate_week": "0.509493670886076"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-10-21",
+  "mature_active": "306",
+  "mature_churners": "146",
+  "mature_churn_rate_week": "0.477124183006536"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-10-28",
+  "mature_active": "296",
+  "mature_churners": "139",
+  "mature_churn_rate_week": "0.46959459459459457"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-11-04",
+  "mature_active": "307",
+  "mature_churners": "146",
+  "mature_churn_rate_week": "0.47557003257328989"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-11-11",
+  "mature_active": "320",
+  "mature_churners": "175",
+  "mature_churn_rate_week": "0.546875"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-11-18",
+  "mature_active": "289",
+  "mature_churners": "153",
+  "mature_churn_rate_week": "0.52941176470588236"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-11-25",
+  "mature_active": "272",
+  "mature_churners": "140",
+  "mature_churn_rate_week": "0.51470588235294112"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-12-02",
+  "mature_active": "268",
+  "mature_churners": "130",
+  "mature_churn_rate_week": "0.48507462686567165"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-12-09",
+  "mature_active": "305",
+  "mature_churners": "141",
+  "mature_churn_rate_week": "0.46229508196721314"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-12-16",
+  "mature_active": "296",
+  "mature_churners": "148",
+  "mature_churn_rate_week": "0.5"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-12-23",
+  "mature_active": "274",
+  "mature_churners": "134",
+  "mature_churn_rate_week": "0.48905109489051096"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2024-12-30",
+  "mature_active": "332",
+  "mature_churners": "174",
+  "mature_churn_rate_week": "0.52409638554216864"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-01-06",
+  "mature_active": "300",
+  "mature_churners": "146",
+  "mature_churn_rate_week": "0.48666666666666669"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-01-13",
+  "mature_active": "346",
+  "mature_churners": "175",
+  "mature_churn_rate_week": "0.5057803468208093"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-01-20",
+  "mature_active": "336",
+  "mature_churners": "177",
+  "mature_churn_rate_week": "0.5267857142857143"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-01-27",
+  "mature_active": "333",
+  "mature_churners": "174",
+  "mature_churn_rate_week": "0.52252252252252251"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-02-03",
+  "mature_active": "344",
+  "mature_churners": "176",
+  "mature_churn_rate_week": "0.51162790697674421"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-02-10",
+  "mature_active": "370",
+  "mature_churners": "185",
+  "mature_churn_rate_week": "0.5"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-02-17",
+  "mature_active": "346",
+  "mature_churners": "169",
+  "mature_churn_rate_week": "0.48843930635838151"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-02-24",
+  "mature_active": "351",
+  "mature_churners": "186",
+  "mature_churn_rate_week": "0.52991452991452992"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-03-03",
+  "mature_active": "350",
+  "mature_churners": "178",
+  "mature_churn_rate_week": "0.50857142857142856"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-03-10",
+  "mature_active": "383",
+  "mature_churners": "201",
+  "mature_churn_rate_week": "0.52480417754569186"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-03-17",
+  "mature_active": "391",
+  "mature_churners": "209",
+  "mature_churn_rate_week": "0.53452685421994883"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-03-24",
+  "mature_active": "358",
+  "mature_churners": "189",
+  "mature_churn_rate_week": "0.52793296089385477"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-03-31",
+  "mature_active": "385",
+  "mature_churners": "201",
+  "mature_churn_rate_week": "0.522077922077922"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-04-07",
+  "mature_active": "394",
+  "mature_churners": "206",
+  "mature_churn_rate_week": "0.52284263959390864"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-04-14",
+  "mature_active": "781",
+  "mature_churners": "586",
+  "mature_churn_rate_week": "0.75032010243277847"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-04-21",
+  "mature_active": "408",
+  "mature_churners": "215",
+  "mature_churn_rate_week": "0.52696078431372551"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-04-28",
+  "mature_active": "416",
+  "mature_churners": "199",
+  "mature_churn_rate_week": "0.47836538461538464"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-05-05",
+  "mature_active": "404",
+  "mature_churners": "202",
+  "mature_churn_rate_week": "0.5"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-05-12",
+  "mature_active": "364",
+  "mature_churners": "175",
+  "mature_churn_rate_week": "0.48076923076923078"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-05-19",
+  "mature_active": "431",
+  "mature_churners": "231",
+  "mature_churn_rate_week": "0.53596287703016243"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-05-26",
+  "mature_active": "391",
+  "mature_churners": "185",
+  "mature_churn_rate_week": "0.47314578005115088"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-06-02",
+  "mature_active": "443",
+  "mature_churners": "214",
+  "mature_churn_rate_week": "0.48306997742663654"
+}, {
+  "platform": "ANDROID",
+  "week_start": "2025-06-09",
+  "mature_active": "434",
+  "mature_churners": "202",
+  "mature_churn_rate_week": "0.46543778801843316"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-01-01",
+  "mature_active": "471",
+  "mature_churners": "136",
+  "mature_churn_rate_week": "0.28874734607218683"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-01-08",
+  "mature_active": "691",
+  "mature_churners": "273",
+  "mature_churn_rate_week": "0.39507959479015919"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-01-15",
+  "mature_active": "758",
+  "mature_churners": "330",
+  "mature_churn_rate_week": "0.43535620052770446"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-01-22",
+  "mature_active": "837",
+  "mature_churners": "355",
+  "mature_churn_rate_week": "0.42413381123058541"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-01-29",
+  "mature_active": "880",
+  "mature_churners": "344",
+  "mature_churn_rate_week": "0.39090909090909093"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-02-05",
+  "mature_active": "911",
+  "mature_churners": "343",
+  "mature_churn_rate_week": "0.37650933040614709"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-02-12",
+  "mature_active": "1034",
+  "mature_churners": "408",
+  "mature_churn_rate_week": "0.39458413926499031"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-02-19",
+  "mature_active": "1094",
+  "mature_churners": "395",
+  "mature_churn_rate_week": "0.36106032906764168"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-02-26",
+  "mature_active": "1184",
+  "mature_churners": "450",
+  "mature_churn_rate_week": "0.38006756756756754"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-03-04",
+  "mature_active": "1211",
+  "mature_churners": "479",
+  "mature_churn_rate_week": "0.39554087530966142"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-03-11",
+  "mature_active": "1197",
+  "mature_churners": "403",
+  "mature_churn_rate_week": "0.33667502088554718"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-03-18",
+  "mature_active": "1281",
+  "mature_churners": "472",
+  "mature_churn_rate_week": "0.36846213895394225"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-03-25",
+  "mature_active": "1278",
+  "mature_churners": "459",
+  "mature_churn_rate_week": "0.35915492957746481"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-04-01",
+  "mature_active": "1388",
+  "mature_churners": "515",
+  "mature_churn_rate_week": "0.37103746397694526"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-04-08",
+  "mature_active": "1322",
+  "mature_churners": "510",
+  "mature_churn_rate_week": "0.38577912254160363"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-04-15",
+  "mature_active": "1479",
+  "mature_churners": "563",
+  "mature_churn_rate_week": "0.38066260987153483"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-04-22",
+  "mature_active": "1537",
+  "mature_churners": "614",
+  "mature_churn_rate_week": "0.39947950553025374"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-04-29",
+  "mature_active": "1440",
+  "mature_churners": "532",
+  "mature_churn_rate_week": "0.36944444444444446"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-05-06",
+  "mature_active": "1532",
+  "mature_churners": "574",
+  "mature_churn_rate_week": "0.37467362924281983"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-05-13",
+  "mature_active": "1642",
+  "mature_churners": "661",
+  "mature_churn_rate_week": "0.402557856272838"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-05-20",
+  "mature_active": "1694",
+  "mature_churners": "645",
+  "mature_churn_rate_week": "0.3807556080283353"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-05-27",
+  "mature_active": "1736",
+  "mature_churners": "635",
+  "mature_churn_rate_week": "0.36578341013824883"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-06-03",
+  "mature_active": "1847",
+  "mature_churners": "651",
+  "mature_churn_rate_week": "0.35246345425013537"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-06-10",
+  "mature_active": "1947",
+  "mature_churners": "662",
+  "mature_churn_rate_week": "0.34001027221366203"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-06-17",
+  "mature_active": "2070",
+  "mature_churners": "654",
+  "mature_churn_rate_week": "0.31594202898550727"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-06-24",
+  "mature_active": "2174",
+  "mature_churners": "671",
+  "mature_churn_rate_week": "0.30864765409383627"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-07-01",
+  "mature_active": "2309",
+  "mature_churners": "672",
+  "mature_churn_rate_week": "0.29103508012126461"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-07-08",
+  "mature_active": "2405",
+  "mature_churners": "679",
+  "mature_churn_rate_week": "0.28232848232848234"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-07-15",
+  "mature_active": "2650",
+  "mature_churners": "785",
+  "mature_churn_rate_week": "0.29622641509433961"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-07-22",
+  "mature_active": "2586",
+  "mature_churners": "713",
+  "mature_churn_rate_week": "0.2757153905645785"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-07-29",
+  "mature_active": "2732",
+  "mature_churners": "710",
+  "mature_churn_rate_week": "0.25988286969253294"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-08-05",
+  "mature_active": "2881",
+  "mature_churners": "779",
+  "mature_churn_rate_week": "0.27039222492190212"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-08-12",
+  "mature_active": "3066",
+  "mature_churners": "765",
+  "mature_churn_rate_week": "0.24951076320939333"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-08-19",
+  "mature_active": "3175",
+  "mature_churners": "870",
+  "mature_churn_rate_week": "0.27401574803149609"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-08-26",
+  "mature_active": "3314",
+  "mature_churners": "1097",
+  "mature_churn_rate_week": "0.33101991550995774"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-09-02",
+  "mature_active": "3010",
+  "mature_churners": "1503",
+  "mature_churn_rate_week": "0.49933554817275749"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-09-09",
+  "mature_active": "2380",
+  "mature_churners": "1157",
+  "mature_churn_rate_week": "0.4861344537815126"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-09-16",
+  "mature_active": "2483",
+  "mature_churners": "1243",
+  "mature_churn_rate_week": "0.50060410793395083"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-09-23",
+  "mature_active": "2437",
+  "mature_churners": "1165",
+  "mature_churn_rate_week": "0.47804677882642593"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-09-30",
+  "mature_active": "2494",
+  "mature_churners": "1211",
+  "mature_churn_rate_week": "0.48556535685645547"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-10-07",
+  "mature_active": "2295",
+  "mature_churners": "1096",
+  "mature_churn_rate_week": "0.47755991285403049"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-10-14",
+  "mature_active": "2391",
+  "mature_churners": "1145",
+  "mature_churn_rate_week": "0.47887913007109995"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-10-21",
+  "mature_active": "2290",
+  "mature_churners": "1025",
+  "mature_churn_rate_week": "0.44759825327510916"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-10-28",
+  "mature_active": "2370",
+  "mature_churners": "1104",
+  "mature_churn_rate_week": "0.46582278481012657"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-11-04",
+  "mature_active": "2458",
+  "mature_churners": "1156",
+  "mature_churn_rate_week": "0.47030105777054515"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-11-11",
+  "mature_active": "2339",
+  "mature_churners": "1075",
+  "mature_churn_rate_week": "0.4595981188542112"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-11-18",
+  "mature_active": "2330",
+  "mature_churners": "1054",
+  "mature_churn_rate_week": "0.45236051502145924"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-11-25",
+  "mature_active": "2268",
+  "mature_churners": "986",
+  "mature_churn_rate_week": "0.43474426807760141"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-12-02",
+  "mature_active": "2453",
+  "mature_churners": "1101",
+  "mature_churn_rate_week": "0.44883815735833671"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-12-09",
+  "mature_active": "2446",
+  "mature_churners": "1072",
+  "mature_churn_rate_week": "0.43826655764513489"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-12-16",
+  "mature_active": "2461",
+  "mature_churners": "986",
+  "mature_churn_rate_week": "0.40065014221861034"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-12-23",
+  "mature_active": "2645",
+  "mature_churners": "1106",
+  "mature_churn_rate_week": "0.41814744801512288"
+}, {
+  "platform": "IOS",
+  "week_start": "2024-12-30",
+  "mature_active": "2905",
+  "mature_churners": "1212",
+  "mature_churn_rate_week": "0.41721170395869189"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-01-06",
+  "mature_active": "3039",
+  "mature_churners": "1271",
+  "mature_churn_rate_week": "0.41822968081605794"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-01-13",
+  "mature_active": "3148",
+  "mature_churners": "1357",
+  "mature_churn_rate_week": "0.43106734434561628"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-01-20",
+  "mature_active": "3120",
+  "mature_churners": "1335",
+  "mature_churn_rate_week": "0.42788461538461536"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-01-27",
+  "mature_active": "2890",
+  "mature_churners": "1192",
+  "mature_churn_rate_week": "0.41245674740484428"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-02-03",
+  "mature_active": "2915",
+  "mature_churners": "1206",
+  "mature_churn_rate_week": "0.41372212692967408"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-02-10",
+  "mature_active": "3078",
+  "mature_churners": "1300",
+  "mature_churn_rate_week": "0.42235217673814163"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-02-17",
+  "mature_active": "3247",
+  "mature_churners": "1378",
+  "mature_churn_rate_week": "0.4243917462272867"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-02-24",
+  "mature_active": "3132",
+  "mature_churners": "1360",
+  "mature_churn_rate_week": "0.4342273307790549"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-03-03",
+  "mature_active": "3210",
+  "mature_churners": "1301",
+  "mature_churn_rate_week": "0.40529595015576325"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-03-10",
+  "mature_active": "3285",
+  "mature_churners": "1400",
+  "mature_churn_rate_week": "0.426179604261796"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-03-17",
+  "mature_active": "3209",
+  "mature_churners": "1369",
+  "mature_churn_rate_week": "0.4266126519164849"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-03-24",
+  "mature_active": "3171",
+  "mature_churners": "1351",
+  "mature_churn_rate_week": "0.42604856512141281"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-03-31",
+  "mature_active": "3442",
+  "mature_churners": "1573",
+  "mature_churn_rate_week": "0.45700174317257408"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-04-07",
+  "mature_active": "3295",
+  "mature_churners": "1378",
+  "mature_churn_rate_week": "0.41820940819423369"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-04-14",
+  "mature_active": "5853",
+  "mature_churners": "3928",
+  "mature_churn_rate_week": "0.67110883307705449"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-04-21",
+  "mature_active": "3320",
+  "mature_churners": "1429",
+  "mature_churn_rate_week": "0.43042168674698794"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-04-28",
+  "mature_active": "3281",
+  "mature_churners": "1439",
+  "mature_churn_rate_week": "0.43858579701310574"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-05-05",
+  "mature_active": "3247",
+  "mature_churners": "1381",
+  "mature_churn_rate_week": "0.42531567600862336"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-05-12",
+  "mature_active": "3498",
+  "mature_churners": "1529",
+  "mature_churn_rate_week": "0.43710691823899372"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-05-19",
+  "mature_active": "3374",
+  "mature_churners": "1447",
+  "mature_churn_rate_week": "0.42886781268524005"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-05-26",
+  "mature_active": "3365",
+  "mature_churners": "1474",
+  "mature_churn_rate_week": "0.43803863298662704"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-06-02",
+  "mature_active": "3472",
+  "mature_churners": "1562",
+  "mature_churn_rate_week": "0.44988479262672809"
+}, {
+  "platform": "IOS",
+  "week_start": "2025-06-09",
+  "mature_active": "3529",
+  "mature_churners": "1565",
+  "mature_churn_rate_week": "0.44346840464720882"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-01-01",
+  "mature_active": "338",
+  "mature_churners": "99",
+  "mature_churn_rate_week": "0.29289940828402367"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-01-08",
+  "mature_active": "673",
+  "mature_churners": "207",
+  "mature_churn_rate_week": "0.30757800891530462"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-01-15",
+  "mature_active": "948",
+  "mature_churners": "260",
+  "mature_churn_rate_week": "0.27426160337552741"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-01-22",
+  "mature_active": "1290",
+  "mature_churners": "373",
+  "mature_churn_rate_week": "0.28914728682170543"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-01-29",
+  "mature_active": "1556",
+  "mature_churners": "454",
+  "mature_churn_rate_week": "0.29177377892030848"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-02-05",
+  "mature_active": "1766",
+  "mature_churners": "493",
+  "mature_churn_rate_week": "0.27916194790486976"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-02-12",
+  "mature_active": "2003",
+  "mature_churners": "558",
+  "mature_churn_rate_week": "0.27858212680978534"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-02-19",
+  "mature_active": "2290",
+  "mature_churners": "646",
+  "mature_churn_rate_week": "0.28209606986899566"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-02-26",
+  "mature_active": "2620",
+  "mature_churners": "764",
+  "mature_churn_rate_week": "0.2916030534351145"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-03-04",
+  "mature_active": "2889",
+  "mature_churners": "875",
+  "mature_churn_rate_week": "0.30287296642436828"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-03-11",
+  "mature_active": "3010",
+  "mature_churners": "891",
+  "mature_churn_rate_week": "0.29601328903654484"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-03-18",
+  "mature_active": "3148",
+  "mature_churners": "955",
+  "mature_churn_rate_week": "0.30336721728081323"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-03-25",
+  "mature_active": "3176",
+  "mature_churners": "906",
+  "mature_churn_rate_week": "0.285264483627204"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-04-01",
+  "mature_active": "3455",
+  "mature_churners": "981",
+  "mature_churn_rate_week": "0.28393632416787262"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-04-08",
+  "mature_active": "3567",
+  "mature_churners": "1035",
+  "mature_churn_rate_week": "0.29015979814970566"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-04-15",
+  "mature_active": "4053",
+  "mature_churners": "1171",
+  "mature_churn_rate_week": "0.28892178633111276"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-04-22",
+  "mature_active": "4105",
+  "mature_churners": "1219",
+  "mature_churn_rate_week": "0.29695493300852621"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-04-29",
+  "mature_active": "4168",
+  "mature_churners": "1211",
+  "mature_churn_rate_week": "0.29054702495201534"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-05-06",
+  "mature_active": "4311",
+  "mature_churners": "1239",
+  "mature_churn_rate_week": "0.2874043145441893"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-05-13",
+  "mature_active": "4605",
+  "mature_churners": "1292",
+  "mature_churn_rate_week": "0.28056460369163955"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-05-20",
+  "mature_active": "4663",
+  "mature_churners": "1375",
+  "mature_churn_rate_week": "0.2948745442847952"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-05-27",
+  "mature_active": "4774",
+  "mature_churners": "1455",
+  "mature_churn_rate_week": "0.30477586929199835"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-06-03",
+  "mature_active": "5040",
+  "mature_churners": "1605",
+  "mature_churn_rate_week": "0.31845238095238093"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-06-10",
+  "mature_active": "5233",
+  "mature_churners": "1739",
+  "mature_churn_rate_week": "0.33231416013758835"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-06-17",
+  "mature_active": "5467",
+  "mature_churners": "1915",
+  "mature_churn_rate_week": "0.35028351929760382"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-06-24",
+  "mature_active": "5148",
+  "mature_churners": "1919",
+  "mature_churn_rate_week": "0.37276612276612275"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-07-01",
+  "mature_active": "3439",
+  "mature_churners": "1330",
+  "mature_churn_rate_week": "0.38674033149171272"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-07-08",
+  "mature_active": "3539",
+  "mature_churners": "1346",
+  "mature_churn_rate_week": "0.38033342752189886"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-07-15",
+  "mature_active": "3702",
+  "mature_churners": "1388",
+  "mature_churn_rate_week": "0.37493246893571042"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-07-22",
+  "mature_active": "5094",
+  "mature_churners": "1572",
+  "mature_churn_rate_week": "0.30859835100117783"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-07-29",
+  "mature_active": "6168",
+  "mature_churners": "1819",
+  "mature_churn_rate_week": "0.29490920881971466"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-08-05",
+  "mature_active": "6448",
+  "mature_churners": "1918",
+  "mature_churn_rate_week": "0.29745657568238215"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-08-12",
+  "mature_active": "6823",
+  "mature_churners": "2027",
+  "mature_churn_rate_week": "0.29708339440128978"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-08-19",
+  "mature_active": "7041",
+  "mature_churners": "1950",
+  "mature_churn_rate_week": "0.27694929697486154"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-08-26",
+  "mature_active": "7526",
+  "mature_churners": "2113",
+  "mature_churn_rate_week": "0.28076003188944992"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-09-02",
+  "mature_active": "7769",
+  "mature_churners": "2159",
+  "mature_churn_rate_week": "0.27789934354485779"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-09-09",
+  "mature_active": "7890",
+  "mature_churners": "2114",
+  "mature_churn_rate_week": "0.26793409378960709"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-09-16",
+  "mature_active": "8857",
+  "mature_churners": "2289",
+  "mature_churn_rate_week": "0.25843965225245569"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-09-23",
+  "mature_active": "8800",
+  "mature_churners": "2187",
+  "mature_churn_rate_week": "0.24852272727272728"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-09-30",
+  "mature_active": "9057",
+  "mature_churners": "2330",
+  "mature_churn_rate_week": "0.25725957822678591"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-10-07",
+  "mature_active": "8967",
+  "mature_churners": "2178",
+  "mature_churn_rate_week": "0.24289059886249581"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-10-14",
+  "mature_active": "9435",
+  "mature_churners": "2335",
+  "mature_churn_rate_week": "0.2474827768945416"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-10-21",
+  "mature_active": "9072",
+  "mature_churners": "2084",
+  "mature_churn_rate_week": "0.22971781305114639"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-10-28",
+  "mature_active": "9022",
+  "mature_churners": "2137",
+  "mature_churn_rate_week": "0.23686544003546886"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-11-04",
+  "mature_active": "9738",
+  "mature_churners": "2313",
+  "mature_churn_rate_week": "0.23752310536044363"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-11-11",
+  "mature_active": "9834",
+  "mature_churners": "2356",
+  "mature_churn_rate_week": "0.2395769778320114"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-11-18",
+  "mature_active": "9577",
+  "mature_churners": "2210",
+  "mature_churn_rate_week": "0.23076119870523129"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-11-25",
+  "mature_active": "9195",
+  "mature_churners": "2030",
+  "mature_churn_rate_week": "0.2207721587819467"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-12-02",
+  "mature_active": "10041",
+  "mature_churners": "2358",
+  "mature_churn_rate_week": "0.23483716761278758"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-12-09",
+  "mature_active": "9831",
+  "mature_churners": "2282",
+  "mature_churn_rate_week": "0.23212287661478995"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-12-16",
+  "mature_active": "9582",
+  "mature_churners": "2077",
+  "mature_churn_rate_week": "0.21676059277812565"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-12-23",
+  "mature_active": "8966",
+  "mature_churners": "2007",
+  "mature_churn_rate_week": "0.22384563908097257"
+}, {
+  "platform": "WEB",
+  "week_start": "2024-12-30",
+  "mature_active": "10678",
+  "mature_churners": "2425",
+  "mature_churn_rate_week": "0.2271024536430043"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-01-06",
+  "mature_active": "11744",
+  "mature_churners": "2711",
+  "mature_churn_rate_week": "0.23084128065395096"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-01-13",
+  "mature_active": "11935",
+  "mature_churners": "2743",
+  "mature_churn_rate_week": "0.22982823627984919"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-01-20",
+  "mature_active": "11318",
+  "mature_churners": "2603",
+  "mature_churn_rate_week": "0.22998763032337868"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-01-27",
+  "mature_active": "11539",
+  "mature_churners": "2596",
+  "mature_churn_rate_week": "0.224976167778837"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-02-03",
+  "mature_active": "12219",
+  "mature_churners": "2643",
+  "mature_churn_rate_week": "0.21630247974465996"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-02-10",
+  "mature_active": "12914",
+  "mature_churners": "2905",
+  "mature_churn_rate_week": "0.2249496670280316"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-02-17",
+  "mature_active": "13543",
+  "mature_churners": "2963",
+  "mature_churn_rate_week": "0.2187846119766669"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-02-24",
+  "mature_active": "13656",
+  "mature_churners": "3076",
+  "mature_churn_rate_week": "0.22524897480960751"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-03-03",
+  "mature_active": "13644",
+  "mature_churners": "3024",
+  "mature_churn_rate_week": "0.22163588390501318"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-03-10",
+  "mature_active": "14326",
+  "mature_churners": "3101",
+  "mature_churn_rate_week": "0.21645958397319559"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-03-17",
+  "mature_active": "14417",
+  "mature_churners": "3280",
+  "mature_churn_rate_week": "0.22750919053894708"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-03-24",
+  "mature_active": "14187",
+  "mature_churners": "3248",
+  "mature_churn_rate_week": "0.22894198914499189"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-03-31",
+  "mature_active": "14525",
+  "mature_churners": "3341",
+  "mature_churn_rate_week": "0.2300172117039587"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-04-07",
+  "mature_active": "14440",
+  "mature_churners": "3248",
+  "mature_churn_rate_week": "0.22493074792243767"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-04-14",
+  "mature_active": "14111",
+  "mature_churners": "3142",
+  "mature_churn_rate_week": "0.22266317057614626"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-04-21",
+  "mature_active": "15043",
+  "mature_churners": "3479",
+  "mature_churn_rate_week": "0.23127035830618892"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-04-28",
+  "mature_active": "14876",
+  "mature_churners": "3475",
+  "mature_churn_rate_week": "0.23359774132831407"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-05-05",
+  "mature_active": "14544",
+  "mature_churners": "3256",
+  "mature_churn_rate_week": "0.22387238723872388"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-05-12",
+  "mature_active": "15801",
+  "mature_churners": "3775",
+  "mature_churn_rate_week": "0.23890892981456871"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-05-19",
+  "mature_active": "15693",
+  "mature_churners": "3829",
+  "mature_churn_rate_week": "0.24399413751354107"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-05-26",
+  "mature_active": "15405",
+  "mature_churners": "3599",
+  "mature_churn_rate_week": "0.23362544628367413"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-06-02",
+  "mature_active": "15690",
+  "mature_churners": "3775",
+  "mature_churn_rate_week": "0.24059910771191842"
+}, {
+  "platform": "WEB",
+  "week_start": "2025-06-09",
+  "mature_active": "15240",
+  "mature_churners": "3529",
+  "mature_churn_rate_week": "0.23156167979002626"
+}]

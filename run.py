@@ -18,7 +18,11 @@ def main():
     rate_cols = [c for c in df.columns if c.startswith('churn_rate')]
     count_cols = [c for c in df.columns if c not in rate_cols + ['week']]
     print("Totals (counts/values):\n", df[count_cols].sum(numeric_only=True).apply('{:,.0f}'.format))
-    print("Means (rates):\n", df[rate_cols].mean(numeric_only=True))
+    # Show churn rates as percentages (mean weekly rates)
+    rate_means = df[rate_cols].mean(numeric_only=True)
+    print("Means (rates):")
+    for col, val in rate_means.items():
+        print(f"  {col}: {val*100:.2f}%")
 
         # Estimated booker conversion rates over the run (bookers / active)
     tot_active_p = df['active_partners'].sum()
