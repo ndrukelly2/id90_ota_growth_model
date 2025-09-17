@@ -1,408 +1,206 @@
-# ID90 Growth & Revenue Simulator
+# OTA Growth Model
 
-This repo simulates weekly active users, bookers, product purchases, and total take (revenue) for two user groups (`partners`, `non_partners`) across four LOBs (`flights`, `hotels`, `cars`, `cruises`). It supports calibration, cohort‑based early retention, mature churn, product mix tuning, and scenario deltas vs a baseline.
+A simple simulation to project weekly active users, bookers, bookings by line of business (LOB), and take (net revenue) over a configurable horizon.
 
-* **Entrypoint:** `python run.py`
-* **Config:** `config.yaml`
-* **Output:** `simulation_output.csv` + console summary
+* Input: `config.yaml`
+* Output: `simulation_output.csv`
+* Entry point: `python run.py`
 
----
-
-## Quick Start
-
-1. Ensure Python 3.x and dependencies (pandas, numpy, pyyaml).
-2. Put your inputs in **`config.yaml`** (examples below).
-3. Run:
-
-   ```bash
-   python run.py
-   ```
-4. Open **`simulation_output.csv`** and chart whatever you need (e.g., weekly take, bookings, churn).
+> **Important change**: All calibration settings now live **under a nested `calibration:` block** (see below). The code no longer reads top‑level calibration keys like `calibration_mode:`.
 
 ---
 
-## Concepts & Flow (High-level)
+## Quick start
 
-Each simulated week *t*:
+```bash
+pip install -r requirements.txt
+# or: pip install pandas numpy pyyaml
 
-1. **Active WAU** = mature pool + onboarding presence (weeks 0–12) driven by cohort presence `W_k`.
-2. **Bookers** by group = WAU × weekly booker rate (`p_book[g]`).
-3. **Bookings by LOB** = bookers × `(purchases_per_booker_per_year[g][lob] / 52)` (flights suppressed if gate is off).
-4. **Take** by LOB using LOB economics (flights = PNRS × take\_per\_PNR; others = bookings × take\_per\_booking).
-5. **Graduate** onboarding age‑12 to mature with `p_grad`, then **apply mature churn** to the mature pool.
-
----
-
-## Configuration (what goes in `config.yaml`)
-
-Below is a complete reference with examples. You don’t need every section—use what’s relevant.
-
-### Simulation duration
-
-```yaml
-weeks: 52   # number of weeks to simulate
-```
-
-### Initial active users (WAU)
-
-```yaml
-initial_wau_by_group:
-  partners: 150000
-  non_partners: 150000
-```
-
-If omitted, the loader can split `initial_wau_total` by share:
-
-```yaml
-initial_wau_total: 300000
-user_groups:
-  active_user_share:
-    partners: 0.5
-    non_partners: 0.5
+python run.py
+# writes simulation_output.csv and prints a run summary
 ```
 
 ---
 
-### New accounts (inflow)
+## Configuration (`config.yaml`)
 
-There are **three** possible sources; they’re checked in this order:
-
-1. **`historical_series.weekly_new_accounts_by_group` — overrides everything**
-2. `new_accounts.mode: series` → `new_accounts.series_by_group`
-3. `new_accounts.mode: baseline_growth` → parametric baseline + weekly growth
-
-**Important precedence rule:**
-If `historical_series.weekly_new_accounts_by_group` is present, it **wins**, and `new_accounts.mode` is **ignored**.
-
-#### Option A — Use a week‑by‑week series
+### Top-level keys
 
 ```yaml
-new_accounts:
-  mode: series
-  series_by_group:
-    partners:      [1200, 1180, 1235, ...]          # length ≥ weeks (extra is truncated)
-    non_partners:  [2200, 2190, 2250, ...]
-```
+# number of weeks to simulate
+weeks: 52
 
-> If you also have the top‑level `historical_series.weekly_new_accounts_by_group`, delete it or it will override this series.
+# (optional) RNG seed for reproducible runs
+seed: 42
 
-#### Option B — Use parametric baseline growth
+# (optional) used only for console Δ reporting at the end of a run
+baseline_total_take_usd: 0
 
-```yaml
-new_accounts:
-  mode: baseline_growth
-  baseline_per_week_by_group:
-    partners: 1200
-    non_partners: 2200
-  growth_rate_weekly_by_group:
-    partners: 0.0070       # ≈ +0.70% per week
-    non_partners: 0.0070
-```
-
-#### (Overrides) Top‑level historical series
-
-```yaml
-historical_series:
-  weekly_new_accounts_by_group:
-    partners:      [ ... ]
-    non_partners:  [ ... ]
-```
-
-> If present, this is used **regardless** of `new_accounts.mode`.
-
----
-
-### Early‑life retention (onboarding presence 0–12 weeks)
-
-You can provide a **cohort CSV** to derive weekly presence `W_k` and the **graduation probability** `p_grad`:
-
-```yaml
-cohort_csv_path: path/to/your_cohort.csv
-retention_hazard_scale: 1.0   # >1.0 boosts daily presence; <1.0 reduces
-```
-
-**Accepted CSV formats:**
-
-* **Long form:** columns `day` (0..90) and `p_active_day` (0..1).
-* **Matrix form:** a non‑numeric id column (e.g. `cohort_date`) followed by numeric day offset columns `"0"`..`"90"`. Each row is normalized by day‑0 and averaged across cohorts.
-
-> The **hazard transform** `p' = 1 − (1 − p)^scale` is applied **only** when a **cohort CSV** is used.
-
-If you **don’t** provide a CSV (or retention points), the model falls back to default `W_k` and `p_grad` (a simple shaped presence; default `p_grad = 0.02`).
-
-> There is also a `retention_points` option if you prefer to hand‑specify shape; if used, CSV is ignored. Hazard scale is not applied in that path.
-
----
-
-### Mature churn (post‑90d)
-
-Provide either **weekly** rates (preferred) or **monthly** rates (we convert to weekly via compounding). Then you can scale per group.
-
-```yaml
-# Preferred direct weekly input
-estimated_churn_from_12m_inactivity:
-  weekly_mature_churn_rate_by_group:
-    partners: 0.000576   # e.g., ≈0.0576% weekly
-    non_partners: 0.000691
-
-# Or, monthly rates (converted to weekly)
-monthly_mature_churn_rate_by_group:
-  partners: 0.0025
-  non_partners: 0.0030
-
-# Scenario knob (NEW): per‑group mature churn scaling
-mature_churn_scale_by_group:
-  partners: 1.00      # 0.90 => reduce partners churn 10%
-  non_partners: 1.00  # 1.10 => increase non‑partners churn 10%
-```
-
----
-
-### Booker conversion & calibration
-
-You can run with a fixed weekly booker rate per group, or let the simulator **calibrate** to a target.
-
-```yaml
-# Use calibration or provide explicit rates
-calibration_mode: target_annual_take   # one of: none | target_annual_take | observed_bookings
-target_annual_take_usd: 22359972.58
-calibration_shared_rate_only: true     # calibrates a single shared weekly rate for both groups
-calibration_max_weekly_booker_rate: 1.0
-weeks_to_use: 52                       # optional: limit calibration to first N weeks
-
-# If calibration_mode: none, set rates explicitly:
-booker_rate_weekly_by_group:
-  partners: 0.012
-  non_partners: 0.010
-
-# (Optional) Observed bookings mode expects a CSV and schema you define; if provided:
-bookings_csv_path: path/to/bookings.csv
-```
-
-> The `target_annual_take` calibration uses linearity: it runs a unit simulation and scales a **shared** weekly booker rate (bounded by `calibration_max_weekly_booker_rate`) to hit your target.
-
----
-
-### Product mix & LOB economics
-
-Base **purchases per booker per year** by group and LOB:
-
-```yaml
-purchases_per_booker_per_year_by_lob_by_group:
-  partners:
-    flights: 2.1      # PNRS/booker/year (flights)
-    hotels:  1.0      # BOOKINGS/booker/year (hotels)
-    cars:    0.2
-    cruises: 0.05
-  non_partners:
-    flights: 1.9
-    hotels:  0.9
-    cars:    0.2
-    cruises: 0.05
-```
-
-**Product‑mix scaler (NEW):** multiply those frequencies to test mix shifts.
-
-```yaml
-product_mix_scale_by_lob_by_group:
-  flights:                # single number or per‑group mapping
-    partners: 1.10        # +10% PNRS/booker for partners
-    non_partners: 1.00
-  hotels: 1.05            # +5% bookings/booker for both groups
-  cruises: 0.90           # -10%
-  cars: 1.00
-```
-
-**LOB economics:**
-
-```yaml
-lobs:
-  flights:
-    take_per_pnr_usd: 4.75
-  hotels:
-    take_per_booking_usd: 45.00
-  cars:
-    take_per_booking_usd: 5.50
-  cruises:
-    take_per_booking_usd: 200.00
-```
-
-**Flights gate:** suppress flights demand (no redistribution) for a group.
-
-```yaml
+# enable/disable product access per user group
 flights_gate:
   partners: true
-  non_partners: false
+  non_partners: true
+
+# LOB unit economics (used to compute take from bookings)
+lobs:
+  flights:
+    take_per_pnr_usd: 9.50
+  hotels:
+    take_per_booking_usd: 14.00
+  cars:
+    take_per_booking_usd: 6.00
+  cruises:
+    take_per_booking_usd: 25.00
+
+# Average purchases per booker per year, by LOB
+# These drive weekly booking volume as: bookers * (purchases_per_year / 52)
+purchases_per_booker_per_year_by_lob:
+  flights: 1.6
+  hotels: 1.8
+  cars: 0.7
+  cruises: 0.2
+
+# New-account inflow; either provide a weekly baseline (constant) and optional growth,
+# or provide your own per-week series (advanced, see notes).
+new_accounts:
+  baseline_per_week_by_group:
+    partners: 1200
+    non_partners: 800
+  growth_rate_weekly_by_group:   # fractional; e.g., 0.01 == +1% per week compounding
+    partners: 0.00
+    non_partners: 0.00
+
+# Weekly mature churn rates by group (see notes for monthly → weekly conversion)
+weekly_mature_churn_rate_by_group:
+  partners: 0.006
+  non_partners: 0.011
 ```
 
----
+### Calibration (nested block)
 
-### Baseline (for quick scenario deltas)
-
-Add a **baseline** to print deltas in the console after each run:
+All calibration-related inputs must be placed under the `calibration:` key.
 
 ```yaml
-baseline_total_take_usd: 22359972.58
+calibration:
+  # "none" disables calibration; "target_annual_take" tunes booker rate(s)
+  mode: none  # or: target_annual_take
+
+  # If mode == target_annual_take, the simulator will adjust booker rate(s)
+  # to match this total take (USD) across the horizon.
+  target_annual_take_usd: 22500000
+
+  # Optional: path to a weekly bookings CSV used for calibration heuristics
+  bookings_csv_path: data/bookings_history.csv
+
+  # Optional: limit historical weeks consumed from the CSV for calibration
+  weeks_to_use: 52
+
+  # If true, calibrate a single shared weekly booker rate for all groups/LOBs
+  shared_rate_only: false
+
+  # Upper bound on the weekly booker rate during calibration (safety valve)
+  max_weekly_booker_rate: 0.15
 ```
 
-Console will show:
+**Notes**
 
-```
-Total take_usd_total: 22,423,100.00
-Vs baseline $22,359,972.58: Δ $63,127.42 (+0.28%)
-```
+* If `mode: none`, no calibration occurs and your explicit config values are used as-is.
+* If `mode: target_annual_take`, the simulator iteratively adjusts weekly booker rate(s) (bounded by `max_weekly_booker_rate`) to hit `target_annual_take_usd`. If `shared_rate_only: true`, a single rate is learned; otherwise rates may be learned per group/LOB.
 
----
+### Churn rates: weekly vs monthly
 
-## Output schema (CSV)
+The simulator expects **weekly** churn inputs via `weekly_mature_churn_rate_by_group`. If you only have **monthly** churn, convert to weekly before placing it in the config using:
 
-`simulation_output.csv` includes:
+$weekly$ = `1 - (1 - monthly)^(1/4.345)`
 
-* `week`
-* **Active & bookers**
-
-  * `active_partners`, `active_non_partners`
-  * `bookers_partners`, `bookers_non_partners`
-* **Bookings by LOB**
-
-  * `bookings_flights`, `bookings_hotels`, `bookings_cars`, `bookings_cruises`
-* **Take by LOB and total**
-
-  * `take_usd_flights`, `take_usd_hotels`, `take_usd_cars`, `take_usd_cruises`
-  * `bookings_total`, `take_usd_total`
-* **New accounts (inflow)**
-
-  * `new_accounts_partners`, `new_accounts_non_partners`
-* **(NEW) Weekly churn**
-
-  * `churn_rate_partners`, `churn_rate_non_partners`  *(weekly mature churn rates applied)*
-  * `churned_partners`, `churned_non_partners`, `churned_total`
-    *(counts, computed on mature pool **after** this week’s graduates join)*
-
-> The CSV uses one row per week. Column order is stable; if you remove the explicit list in `run.py` it will follow insertion order from the simulator.
+> Example: `monthly = 0.025` ⇒ `weekly ≈ 0.00581`.
 
 ---
 
-## Running & Console Summary
+## What the simulator writes
 
-`python run.py` will:
+`simulation_output.csv` with the following columns (one row per week):
 
-* Generate `simulation_output.csv`
-* Print a summary:
+* `week` — 1..N
+* `active_partners`, `active_non_partners`, `active_total`
+* `bookers_partners`, `bookers_non_partners`, `bookers_total`
+* `bookings_flights`, `bookings_hotels`, `bookings_cars`, `bookings_cruises`, `bookings_total`
+* `take_flights_usd`, `take_hotels_usd`, `take_cars_usd`, `take_cruises_usd`, `take_total_usd`
+* `new_accounts_partners`, `new_accounts_non_partners`
+* `churn_rate_partners`, `churn_rate_non_partners`
+* `churned_partners`, `churned_non_partners`, `churned_total`
 
-  * Sum of key columns (pandas `describe`/`sum` flavor)
-  * Estimated/calibrated weekly booker rate(s)
-  * **Total take** and **Δ vs baseline** (if baseline provided)
-  * **Avg new users/week**
-  * **Avg churned users/week** and **avg weekly mature churn rate** by group
+**Relationships (at a glance)**
+
+* `bookings_<lob> = bookers_total_or_group × (purchases_per_booker_per_year_by_lob[<lob>] / 52)`
+* `take_<lob>_usd = bookings_<lob> × lobs[<lob>].take_per_*_usd`
+* If both `flights_gate.partners` and `flights_gate.non_partners` are `false`, `bookings_flights` will be zero.
+
+**Console summary**
+At the end of a run, the script prints: total take, Δ vs `baseline_total_take_usd` (if provided), estimated booker conversion, and averages for new users and churn.
 
 ---
 
-## Modeling Tips
+## Examples
 
-* **New accounts precedence:** If you want to drive scenarios with a **series**, put the data under `new_accounts.series_by_group` and remove `historical_series.weekly_new_accounts_by_group`. If you want a **smooth increase**, use `baseline_growth`. Don’t keep both—`historical_series` overrides.
-* **Retention hazard scale:** Only applied when a **cohort CSV** is used. It warps daily presence as `1 − (1 − p)^scale` before weekly union presence is computed. It does **not** apply in the default `W_k` fallback.
-* **Flights gate:** When `false`, we **suppress** flights demand for that group with no redistribution to other LOBs (deliberately conservative).
-* **Mature churn scale:** Use `mature_churn_scale_by_group` to test scenario reductions/increases to churn **after** you supply the baseline weekly/monthly rates.
-* **Product mix:** `product_mix_scale_by_lob_by_group` multiplies your **per‑booker frequencies**. If you want a separate “share of bookers” control vs “orders per purchasing booker,” we can add it, but in practice the single scaler is usually sufficient for scenario planning.
-
----
-
-## Minimal Example `config.yaml`
+### Minimal `config.yaml`
 
 ```yaml
 weeks: 52
+seed: 7
+baseline_total_take_usd: 0
 
-initial_wau_by_group:
-  partners: 150000
-  non_partners: 150000
-
-# New accounts (pick ONE source)
-new_accounts:
-  mode: baseline_growth
-  baseline_per_week_by_group:
-    partners: 1200
-    non_partners: 2200
-  growth_rate_weekly_by_group:
-    partners: 0.0070
-    non_partners: 0.0070
-# historical_series:
-#   weekly_new_accounts_by_group: {partners: [...], non_partners: [...]}
-# new_accounts:
-#   mode: series
-#   series_by_group: {partners: [...], non_partners: [...]}
-
-# Early retention (optional)
-# cohort_csv_path: path/to/cohort.csv
-retention_hazard_scale: 1.0
-
-# Mature churn
-estimated_churn_from_12m_inactivity:
-  weekly_mature_churn_rate_by_group:
-    partners: 0.000576
-    non_partners: 0.000691
-mature_churn_scale_by_group:
-  partners: 1.0
-  non_partners: 1.0
-
-# Calibration
-calibration_mode: target_annual_take   # none | target_annual_take | observed_bookings
-target_annual_take_usd: 22359972.58
-calibration_shared_rate_only: true
-calibration_max_weekly_booker_rate: 1.0
-weeks_to_use: 52
-
-# Purchases per booker per year (base)
-purchases_per_booker_per_year_by_lob_by_group:
-  partners:      {flights: 2.1, hotels: 1.0, cars: 0.2, cruises: 0.05}
-  non_partners:  {flights: 1.9, hotels: 0.9, cars: 0.2, cruises: 0.05}
-
-# Product mix scaler (NEW)
-product_mix_scale_by_lob_by_group:
-  flights: {partners: 1.10, non_partners: 1.00}
-  hotels: 1.05
-  cruises: 0.90
-  cars: 1.00
-
-# LOB economics
-lobs:
-  flights: {take_per_pnr_usd: 4.75}
-  hotels:  {take_per_booking_usd: 45.00}
-  cars:    {take_per_booking_usd: 5.50}
-  cruises: {take_per_booking_usd: 200.00}
-
-# Flights gate
 flights_gate:
   partners: true
-  non_partners: false
+  non_partners: true
 
-# Baseline for % delta printout (NEW)
-baseline_total_take_usd: 22359972.58
+lobs:
+  flights: { take_per_pnr_usd: 9.5 }
+  hotels:  { take_per_booking_usd: 14 }
+  cars:    { take_per_booking_usd: 6 }
+  cruises: { take_per_booking_usd: 25 }
+
+purchases_per_booker_per_year_by_lob:
+  flights: 1.6
+  hotels: 1.8
+  cars: 0.7
+  cruises: 0.2
+
+new_accounts:
+  baseline_per_week_by_group:
+    partners: 1200
+    non_partners: 800
+  growth_rate_weekly_by_group:
+    partners: 0.00
+    non_partners: 0.00
+
+weekly_mature_churn_rate_by_group:
+  partners: 0.006
+  non_partners: 0.011
+
+calibration:
+  mode: none
+  target_annual_take_usd: 0
+  bookings_csv_path: null
+  weeks_to_use: 52
+  shared_rate_only: false
+  max_weekly_booker_rate: 0.15
 ```
-
----
-
-## Changelog
-
-* **\[NEW] Weekly churn in CSV:**
-  `churn_rate_partners`, `churn_rate_non_partners`, `churned_partners`, `churned_non_partners`, `churned_total`.
-* **\[NEW] Per‑group mature churn scale:**
-  `mature_churn_scale_by_group` multiplies computed weekly churn per group.
-* **\[NEW] Product mix scaler:**
-  `product_mix_scale_by_lob_by_group` multiplies per‑booker frequencies by LOB (per‑group optional).
-* **\[NEW] Baseline deltas:**
-  `baseline_total_take_usd` prints Δ and % vs baseline in console.
-* Documentation clarified for **new accounts precedence** and **cohort hazard scale** behavior.
 
 ---
 
 ## Troubleshooting
 
-* **My hazard scale doesn’t change results.**
-  Ensure `cohort_csv_path` points to a real CSV in one of the supported formats. Hazard only applies in the cohort‑CSV path.
-* **Changing `new_accounts.mode` does nothing.**
-  You probably still have `historical_series.weekly_new_accounts_by_group` present. Remove it or it will override.
-* **Flights scaling has no effect for non‑partners.**
-  Check `flights_gate.non_partners`. If it’s `false`, flights demand is suppressed for that group.
+* **`config.yaml` not found**: Ensure the file is in the project root (same folder as `run.py`).
+* **Missing LOB economics**: Define `take_per_pnr_usd` for `flights` and `take_per_booking_usd` for `hotels`, `cars`, and `cruises`.
+* **Take looks too high/low**: Recheck `purchases_per_booker_per_year_by_lob` and LOB take values.
+* **Churn looks off**: Confirm you converted monthly rates to weekly before placing them under `weekly_mature_churn_rate_by_group`.
+* **Calibration overshoots**: Lower `max_weekly_booker_rate`, enable `shared_rate_only`, or feed more representative history via `bookings_csv_path` and `weeks_to_use`.
 
+---
 
+## Dev notes
+
+* The simulator reads only `config.yaml`. A previous mention of `config.py` is obsolete.
+* Calibration keys are **strictly nested** under `calibration:`.
+* CSV schema remains stable; downstream notebooks or dashboards can rely on the columns listed above.

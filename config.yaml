@@ -82,8 +82,8 @@ retention_hazard_scale: 1  # Keep at 1.0 now; later you can tune retention by sc
 # 12 month net basis - more cautions
 estimated_churn_from_12m_inactivity:
   weekly_mature_churn_rate_by_group:
-    partners: 0.00238
-    non_partners: 0.00307
+    partners: 0.00238 # 0.00238
+    non_partners: 0.00307 # 0.00307
 # 6 month net basis - faster decay
 # estimated_churn_from_12m_inactivity:
 #   weekly_mature_churn_rate_by_group:
@@ -100,8 +100,8 @@ mature_churn_scale_by_group:
 # We will fit p_book (booker_rate_weekly_by_group) using one of the calibration modes below.
 # Once calibrated, we can set this value here and play with other variables to assess their impact
 booker_rate_weekly_by_group:
-  partners: 0.792521 # 0.792521
-  non_partners: 0.792521 # 0.792521
+  partners: null # 0.792521
+  non_partners: null # 0.792521
 
 calibration:
   # Mode A (default): if you have observed bookings by LOB per week, we fit p_book by least squares.
