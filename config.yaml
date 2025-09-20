@@ -1,151 +1,365 @@
 # ===========================
 # Weekly Travel Finance Simulator — CONFIG
-# Simplified funnel: ACTIVE → BOOKERS → BOOKINGS → TAKE
-# Your choices implemented:
-#   - Keep New Accounts as a lever
-#   - Initialize Active from WAU
-#   - Use Cohort CSV mode for 0–90d onboarding contribution to WAU
-#   - Calibrate p_book (booker rate) while keeping per-LOB frequencies fixed
-#   - Flights gate: Partners CAN book flights; Non-partners CANNOT (suppression, no redistribution)
-#   - DAU/WAU used only as a sanity check (no direct effect on the sim)
+# Input to the simulator (run via `python run.py`).
+# Key ideas:
+#  - Active users (WAU) split by group
+#  - New accounts inflow (series or baseline+growth)
+#  - 0–90d onboarding presence from a cohort CSV (optional)
+#  - Mature churn (weekly)
+#  - Booker rate calibration (under calibration: block)
+#  - LOB frequencies × unit economics → take
+#
+# Important: All calibration settings live under the nested `calibration:` block.
+# Supported modes in this code: "observed_bookings" | "target_annual_take" | "none".
 # ===========================
 
-# --- TIME OUPUT SETTINGS ---
+# --- TIME & RUN SETTINGS ---
+# time_grain is informational; the model simulates weekly rows.
 time_grain: weekly
-weeks_per_month: 4.34 # used to convert weekly metrics to monthly
-# --- BASELINE CALIBRATION OUTPUT ---
-# --- The output of our initial baseline calibration run should be entered here. Only used for delta calcs ---
+# used only for monthly conversions in comments/mental math (not directly by the model)
+weeks_per_month: 4.34
+# For console delta reporting vs a known baseline total take (optional)
 baseline_total_take_usd: 22999643
-# --- SIMULATION HORIZON ---
+# Number of weeks to simulate
 weeks: 52
 
 # --- GROUPS & INITIALIZATION ---
+# If you don't provide per‑group WAU, the model will split `initial_wau_total`
+# by these shares. If you do provide `initial_wau_by_group`, those override shares.
 user_groups:
-  # Share of initial WAU by group when only a total WAU is provided.
-  # If you have exact per-group WAU, set those below and ignore this share.
   active_user_share:
     partners: 0.55
     non_partners: 0.45
-
-# Initialize from WAU (7-day actives). Replace with your latest measured WAU.
-# If you have per-group WAU, set `initial_wau_by_group`; otherwise set `initial_wau_total`.
-initial_wau_total: 150000    # <-- From your note: 7-day MAU/WAU ≈ 300k
+# Initialize WAU (week-averaged actives). If per‑group values are null, shares above apply.
+initial_wau_total: 150000
 initial_wau_by_group:
-  partners: null             # set integers to override shares, e.g., 160000
+  partners: null
   non_partners: null
-
-# Optional DAU/WAU sanity check (no simulation impact). If provided, the runner will print a check.
-dau_wau_ratio: 0.35          # <-- From your note (≈ 35%). Implies ~2.45 active days/week per WAU.
+# Optional DAU/WAU sanity (printed by run.py; no effect on simulation)
+dau_wau_ratio: 0.35
 
 # --- NEW ACCOUNTS (SIGNUP INFLOW) ---
-# We can pull in new account information in a few different ways:
-# 1) If historical_series is provided, this is our default
-# 2) Alternatively, if model below is set to "series" we go with series_by_group values
-# 3) Finally, if model below is anything but "series" (aka "baseline_growth")
-# You can specify either a weekly baseline + growth, or an explicit weekly series.
+# Three ways to feed new accounts:
+# 1) `historical_series.weekly_new_accounts_by_group` (if present, preferred)
+# 2) Set `new_accounts.mode: series` and provide `series_by_group`
+# 3) Otherwise, the model uses `baseline_per_week_by_group` with optional weekly growth
 new_accounts:
-  mode: baseline_growth   # "baseline_growth" or "series"
-  # When mode == baseline_growth: provide a baseline value and a weekly growth rate
+  mode: baseline_growth
   baseline_per_week_by_group:
-    partners: 1098        # Roughly sized so WAU is stable with ~1% weekly mature churn.
-    non_partners: 2039    # Tune with your acquisition reality.
+    partners: 1098
+    non_partners: 2039
   growth_rate_weekly_by_group:
-    partners: 0.00        # e.g., 0.01 for +1% WoW growth in new accounts
-    non_partners: 0.00
-  # When mode == series: provide explicit arrays of length = weeks (below)
+    partners: 0.0
+    non_partners: 0.0
   series_by_group:
-    # 1% additional growth over historical baseline for each week. Does not compound
-    partners: [602.18, 1053.81, 1053.81, 1053.81, 1043.15, 979.16, 979.16, 979.16, 979.16, 932.65, 924.91, 924.91, 924.91, 976.82, 1046.06, 1046.06, 1046.06, 1025.03, 898.88, 898.88, 898.88, 898.88, 1015.42, 1062.04, 1062.04, 1062.04, 1106.36, 1217.19, 1217.19, 1217.19, 1281.01, 1440.56, 1440.56, 1440.56, 1440.56, 1374.96, 1364.03, 1364.03, 1364.03, 1304.81, 1260.40, 1260.40, 1260.40, 1248.52, 1177.29, 1177.29, 1177.29, 1177.29, 1207.20, 1212.18, 1212.18, 1212.18, 692.68]          # e.g., [1000, 1020, ...]
-    non_partners: [1118.33, 1957.10, 1957.10, 1957.10, 1937.29, 1818.43, 1818.43, 1818.43, 1818.43, 1732.08, 1717.68, 1717.68, 1717.68, 1814.11, 1942.66, 1942.66, 1942.66, 1903.63, 1669.36, 1669.36, 1669.36, 1669.36, 1885.78, 1972.36, 1972.36, 1972.36, 2054.68, 2260.49, 2260.49, 2260.49, 2379.01, 2675.32, 2675.32, 2675.32, 2675.32, 2553.49, 2533.19, 2533.19, 2533.19, 2423.22, 2340.74, 2340.74, 2340.74, 2318.70, 2186.39, 2186.39, 2186.39, 2186.39, 2241.94, 2251.21, 2251.21, 2251.21, 1286.40]
-
-# --- ACUTAL DATA TO CALIBRATE OR p_book. Comment this out when defining above ---
+    partners:
+    - 602.18
+    - 1053.81
+    - 1053.81
+    - 1053.81
+    - 1043.15
+    - 979.16
+    - 979.16
+    - 979.16
+    - 979.16
+    - 932.65
+    - 924.91
+    - 924.91
+    - 924.91
+    - 976.82
+    - 1046.06
+    - 1046.06
+    - 1046.06
+    - 1025.03
+    - 898.88
+    - 898.88
+    - 898.88
+    - 898.88
+    - 1015.42
+    - 1062.04
+    - 1062.04
+    - 1062.04
+    - 1106.36
+    - 1217.19
+    - 1217.19
+    - 1217.19
+    - 1281.01
+    - 1440.56
+    - 1440.56
+    - 1440.56
+    - 1440.56
+    - 1374.96
+    - 1364.03
+    - 1364.03
+    - 1364.03
+    - 1304.81
+    - 1260.4
+    - 1260.4
+    - 1260.4
+    - 1248.52
+    - 1177.29
+    - 1177.29
+    - 1177.29
+    - 1177.29
+    - 1207.2
+    - 1212.18
+    - 1212.18
+    - 1212.18
+    - 692.68
+    non_partners:
+    - 1118.33
+    - 1957.1
+    - 1957.1
+    - 1957.1
+    - 1937.29
+    - 1818.43
+    - 1818.43
+    - 1818.43
+    - 1818.43
+    - 1732.08
+    - 1717.68
+    - 1717.68
+    - 1717.68
+    - 1814.11
+    - 1942.66
+    - 1942.66
+    - 1942.66
+    - 1903.63
+    - 1669.36
+    - 1669.36
+    - 1669.36
+    - 1669.36
+    - 1885.78
+    - 1972.36
+    - 1972.36
+    - 1972.36
+    - 2054.68
+    - 2260.49
+    - 2260.49
+    - 2260.49
+    - 2379.01
+    - 2675.32
+    - 2675.32
+    - 2675.32
+    - 2675.32
+    - 2553.49
+    - 2533.19
+    - 2533.19
+    - 2533.19
+    - 2423.22
+    - 2340.74
+    - 2340.74
+    - 2340.74
+    - 2318.7
+    - 2186.39
+    - 2186.39
+    - 2186.39
+    - 2186.39
+    - 2241.94
+    - 2251.21
+    - 2251.21
+    - 2251.21
+    - 1286.4
+# If provided, historical series above is preferred over the new_accounts block.
 historical_series:
   weekly_new_accounts_by_group:
-    partners: [596.22, 1043.38, 1043.38, 1043.38, 1032.82, 969.47, 969.47, 969.47, 969.47, 923.42, 915.75, 915.75, 915.75, 967.15, 1035.70, 1035.70, 1035.70, 1014.88, 889.98, 889.98, 889.98, 889.98, 1005.37, 1051.52, 1051.52, 1051.52, 1095.41, 1205.14, 1205.14, 1205.14, 1268.33, 1426.30, 1426.30, 1426.30, 1426.30, 1361.35, 1350.52, 1350.52, 1350.52, 1291.89, 1247.92, 1247.92, 1247.92, 1236.16, 1165.63, 1165.63, 1165.63, 1165.63, 1195.25, 1200.18, 1200.18, 1200.18, 685.82]
-    non_partners: [1107.26, 1937.72, 1937.72, 1937.72, 1918.11, 1800.43, 1800.43, 1800.43, 1800.43, 1714.93, 1700.67, 1700.67, 1700.67, 1796.15, 1923.43, 1923.43, 1923.43, 1884.78, 1652.83, 1652.83, 1652.83, 1652.83, 1867.11, 1952.83, 1952.83, 1952.83, 2034.34, 2238.11, 2238.11, 2238.11, 2355.46, 2648.83, 2648.83, 2648.83, 2648.83, 2528.21, 2508.11, 2508.11, 2508.11, 2399.23, 2317.56, 2317.56, 2317.56, 2295.74, 2164.74, 2164.74, 2164.74, 2164.74, 2219.74, 2228.92, 2228.92, 2228.92, 1273.66]
-#
-# Churn 
-# 81,345 (33% partner, 67% non-partner)
-# --- COHORT CSV MODE (0–90d onboarding) ---
-cohort_csv_path: "C:/Users/ndruk/ID90/id90_ota_growth_model/source data/ID90 New User Signup Cohort Analysis.csv"
-# The CSV is expected to be a "cohort table":
-#   first column = "cohort_date"
-#   subsequent columns = counts of returning/active users at day offsets 0..90 for that cohort.
-# The loader normalizes each row by day 0 to derive p_active_day[d], then converts to weekly WAU presence weights W_k via:
-#   W_k = 1 - Π_{i=0..6} (1 - p_active_day[7k + i])   for k in 0..12
-# and sets p_grad = p_active_day[90] as the graduation fraction to mature at day 90.
-retention_hazard_scale: 1  # Keep at 1.0 now; later you can tune retention by scaling hazards.
+    partners:
+    - 596.22
+    - 1043.38
+    - 1043.38
+    - 1043.38
+    - 1032.82
+    - 969.47
+    - 969.47
+    - 969.47
+    - 969.47
+    - 923.42
+    - 915.75
+    - 915.75
+    - 915.75
+    - 967.15
+    - 1035.7
+    - 1035.7
+    - 1035.7
+    - 1014.88
+    - 889.98
+    - 889.98
+    - 889.98
+    - 889.98
+    - 1005.37
+    - 1051.52
+    - 1051.52
+    - 1051.52
+    - 1095.41
+    - 1205.14
+    - 1205.14
+    - 1205.14
+    - 1268.33
+    - 1426.3
+    - 1426.3
+    - 1426.3
+    - 1426.3
+    - 1361.35
+    - 1350.52
+    - 1350.52
+    - 1350.52
+    - 1291.89
+    - 1247.92
+    - 1247.92
+    - 1247.92
+    - 1236.16
+    - 1165.63
+    - 1165.63
+    - 1165.63
+    - 1165.63
+    - 1195.25
+    - 1200.18
+    - 1200.18
+    - 1200.18
+    - 685.82
+    non_partners:
+    - 1107.26
+    - 1937.72
+    - 1937.72
+    - 1937.72
+    - 1918.11
+    - 1800.43
+    - 1800.43
+    - 1800.43
+    - 1800.43
+    - 1714.93
+    - 1700.67
+    - 1700.67
+    - 1700.67
+    - 1796.15
+    - 1923.43
+    - 1923.43
+    - 1923.43
+    - 1884.78
+    - 1652.83
+    - 1652.83
+    - 1652.83
+    - 1652.83
+    - 1867.11
+    - 1952.83
+    - 1952.83
+    - 1952.83
+    - 2034.34
+    - 2238.11
+    - 2238.11
+    - 2238.11
+    - 2355.46
+    - 2648.83
+    - 2648.83
+    - 2648.83
+    - 2648.83
+    - 2528.21
+    - 2508.11
+    - 2508.11
+    - 2508.11
+    - 2399.23
+    - 2317.56
+    - 2317.56
+    - 2317.56
+    - 2295.74
+    - 2164.74
+    - 2164.74
+    - 2164.74
+    - 2164.74
+    - 2219.74
+    - 2228.92
+    - 2228.92
+    - 2228.92
+    - 1273.66
 
-# Provide **WEEKLY** churn rates for mature users (preferred).
-# These numbers refect a seperate mature churn alaysis where we looked at 12m inactivty and 6m inactivity.
-# See GPT thread here: https://chatgpt.com/share/e/68c8d88d-5c84-800f-860d-1204c3572c6f
-# 12 month net basis - more cautions
+# --- COHORT CSV MODE (0–90d onboarding) ---
+# Provide a path to a cohort table. Supported schemas:
+#  A) Long form with columns [day, p_active_day] (or p_active)
+#  B) Cohort matrix: first column is an ID (e.g., cohort_date); header columns '0'..'90' are daily counts
+#     Each row is normalized by its day-0 column; daily presence fractions are averaged across cohorts.
+# The loader then builds weekly union presence weights W_k (k=0..12):
+#   W_k = 1 - Π_{i=0..6} (1 - p_active_day[7k + i])
+# Graduation fraction p_grad used by the model is the average presence over weeks 9..12 (not just day 90).
+cohort_csv_path: "C:/Users/ndruk/ID90/id90_ota_growth_model/source data/ID90 New User Signup Cohort Analysis.csv"
+# Optional hazard scaling: p' = 1 - (1 - p)^scale
+retention_hazard_scale: 1
+
+# --- MATURE CHURN (WEEKLY) ---
+# Provide weekly churn rates per group. If you only have monthly churn, convert using:
+#   weekly = 1 - (1 - monthly)^(1/4.345)
 estimated_churn_from_12m_inactivity:
   weekly_mature_churn_rate_by_group:
-    partners: 0.00238 # 0.00238
-    non_partners: 0.00307 # 0.00307
-# 6 month net basis - faster decay
-# estimated_churn_from_12m_inactivity:
-#   weekly_mature_churn_rate_by_group:
-#     partners: 0.00339
-#     non_partners: 0.00484
-# --- MATURE CHURN ADJUSTMENTS (APPLIES AFTER 90d) ---
-# Scale mature churn rates by this factor after 90 days to assess impact.
-# Note: Calibration mode must be "none" and an actual p_book must be set.
+    partners: 0.00238
+    non_partners: 0.00307
+# Optional post-onboarding adjustment (multiplier) by group
 mature_churn_scale_by_group:
-  partners: 1.0        # e.g., 0.90 = reduce partners churn 10%
-  non_partners: 1.0    # e.g., 1.10 = increase non-partners churn 10%
+  partners: 1.0
+  non_partners: 1.0
 
-# --- BOOKER RATE (to be calibrated) ---
-# We will fit p_book (booker_rate_weekly_by_group) using one of the calibration modes below.
-# Once calibrated, we can set this value here and play with other variables to assess their impact
+# --- BOOKER RATE (TO BE CALIBRATED OR SET) ---
+# If calibration.mode == none, you can set explicit weekly booker rates here.
+# Otherwise, the model will learn them within bounds.
 booker_rate_weekly_by_group:
-  partners: null # 0.792521
-  non_partners: null # 0.792521
+  partners: null
+  non_partners: null
 
+# --- CALIBRATION (NESTED) ---
+# Supported by this code:
+#   mode: "observed_bookings" | "target_annual_take" | "none"
+# If mode == observed_bookings: provide a CSV with columns [week, flights, hotels, cars, cruises]
+# If mode == target_annual_take: fit a shared weekly p_book to hit target_annual_take_usd
 calibration:
-  # Mode A (default): if you have observed bookings by LOB per week, we fit p_book by least squares.
-  mode: "observed_bookings"   # "observed_bookings" or "target_annual_take" or "none" to test vars
-  bookings_csv_path: "C:/Users/ndruk/ID90/id90_ota_growth_model/source data/weekly_bookings_by_lob.csv"    # e.g., weekly_bookings_by_lob.csv with columns: week,flights,hotels,cars,cruises
+  mode: unique_bookers  # NOTE: not implemented in current code → treated as "none"
+  bookings_csv_path: "C:/Users/ndruk/ID90/id90_ota_growth_model/source data/weekly_booking_by_user_type_lob_52w.csv"  # if using observed_bookings
   weeks_to_use: 52
   non_negative: true
-  # If mode == target_annual_take, we estimate a **single** common p_book to hit this revenue target
-  # (since we have one scalar target). You can later switch to observed_bookings to fit per-group p_book.
-  #target_annual_take_usd: 23000000   # <-- From your note (~$23M/year)
-    # Stability controls for the fit.
-  shared_rate_only: true
-  max_weekly_booker_rate: 1.0
-  target_annual_take_usd: 23000000 # mode must = target_annual_take to calibrate on this (via p_book )
+  shared_rate_only: true   # if true, one shared p_book is fitted
+  max_weekly_booker_rate: 1.0  # safety cap during calibration
+  target_annual_take_usd: 23000000  # used only if mode == target_annual_take
+  schema: auto             # future: ignored by current code
+  group_rate: shared       # future: ignored by current code
+  rate_cap_weekly: 1.0     # future: ignored by current code
 
-# --- PER-BOOKER ANNUAL FREQUENCIES (FIXED) ---
-# Keep simple for now; later you can differentiate by group if needed.
+# --- PER-BOOKER ANNUAL FREQUENCIES (BY GROUP × LOB) ---
+# Bookings per week = bookers × (purchases_per_booker_per_year / 52).
+# You can scale these with product_mix_scale_by_lob_by_group below.
 purchases_per_booker_per_year_by_lob_by_group:
   partners:
-    flights: 10.9 # PNRs/partner booker/year
-    hotels: 1.294
-    cars: 0.579
-    cruises: 0.0358
+    flights: 13.9993
+    hotels: 2.6382
+    cars: 2.4624
+    cruises: 1.7118
   non_partners:
-    flights: 0.0   # Will be zeroed by the flights gate below
-    hotels: 1.467
-    cars: 0.372
-    cruises: 0.112
+    flights: 0.0           # only if you intend zero; otherwise update your weekly file/gates
+    hotels: 2.2706
+    cars: 2.2440
+    cruises: 1.7967
 
 # --- PRODUCT ATTACHMENT KNOBS ---
-# Multiply the base purchases_per_booker_per_year_by_lob_by_group
-# Flights multipliers affect PNRS/booker; others affect BOOKINGS/booker.
+# Multiplier on per‑booker annual frequencies (can be a single number or per‑group mapping per LOB).
+# Per-group overrides let you tweak partners vs non_partners independently, e.g.:
+#   hotels:
+#     partners: 1.10   # +10% for partners
+#     non_partners: 0.95  # -5% for non-partners
 product_mix_scale_by_lob_by_group:
-  flights:         # per-group override for flights
-    partners: 1.00        # +10% PNRS/booker for partners
-    non_partners: 1.00
-  hotels: 1.00            # +5% bookings/booker for both groups
-  cruises: 1.00           # -10%
-  cars: 1.00              # no change
+  flights:
+    partners: 1.0
+    non_partners: 1.0
+  hotels:
+    partners: 1.0
+    non_partners: 1.0
+  cruises:
+    partners: 1.0
+    non_partners: 1.0
+  cars:
+    partners: 1.0
+    non_partners: 1.0
 
-# --- LOB ECONOMICS: DO NOT CHANGE ---
+# --- LOB UNIT ECONOMICS ---
+# Take per transaction by line of business.
 lobs:
   flights:
-    take_per_pnr_usd: 5.00
+    take_per_pnr_usd: 5.0
   hotels:
     take_per_booking_usd: 44.0
   cars:
@@ -153,45 +367,8 @@ lobs:
   cruises:
     take_per_booking_usd: 220.0
 
-
-# --- FLIGHTS GATE (Suppression: non-partners cannot book flights) ---
+# --- FLIGHTS GATE (ACCESS CONTROL) ---
+# Suppress flights demand for groups with false access (no redistribution to other LOBs).
 flights_gate:
   partners: true
   non_partners: false
-
-# ------------------------------------------------------------------------------
-# Auto-derived data (last 52 weeks)
-# These sections DO NOT change existing behavior unless your model reads them.
-# Recommended use: if present, prefer these series over baseline+growth.
-# Source files:
-#   new accounts: ./source data/New Accounts_data.csv
-#   12m inactivity crossers: ./source data/Member Churn_data.csv
-# Coverage: week_end 2024-08-11 → 2025-08-03  (52 weeks)
-# DAU/WAU sanity: 0.35 (≈ 2.45 active days per WAU)
-# ------------------------------------------------------------------------------
-
-initial_wau_by_group:
-  partners: null   # split of your stated WAU≈300000
-  non_partners: null
-
-## Some reference data on time to first puchase 
-## with 730 day lookback window [Do Not Delete] ##
-# [{
-#   "acct_segment": "No Flight Access",
-#   "users_with_purchase": "56630",
-#   "avg_days_to_first_booking": "47.91",
-#   "median_days_to_first_booking": "4.0",
-#   "p25_days_to_first_booking": "0.0",
-#   "p75_days_to_first_booking": "38.0",
-#   "avg_weeks_to_first_booking": "6.84"
-# }, {
-#   "acct_segment": "Partner",
-#   "users_with_purchase": "59514",
-#   "avg_days_to_first_booking": "32.41",
-#   "median_days_to_first_booking": "5.0",
-#   "p25_days_to_first_booking": "0.0",
-#   "p75_days_to_first_booking": "29.0",
-#   "avg_weeks_to_first_booking": "4.63"
-# }]
-
-

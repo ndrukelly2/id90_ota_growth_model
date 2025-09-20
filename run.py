@@ -1,3 +1,6 @@
+
+import argparse
+import os
 import pandas as pd
 import yaml
 from model import run_sim, load_params
@@ -73,5 +76,62 @@ def main():
     print(f"Avg mature churn/week: {avg_churn:,.0f}")
 
 
+
 if __name__ == '__main__':
-    main()
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--diagnose', action='store_true', help='Print calibration/data diagnostics and exit')
+    ap.add_argument('--mode', type=str, help='Override calibration.mode')
+    ap.add_argument('--source', type=str, help='Override calibration.bookings_csv_path')
+    ap.add_argument('--schema', type=str, help='Override calibration.schema (auto|transactions|unique_bookers)')
+    args = ap.parse_args()
+
+    if args.mode or args.source or args.schema:
+        # Shallow override by editing an in-memory copy of config and writing back
+        import yaml, os
+        with open('config.yaml','r') as f:
+            cfg = yaml.safe_load(f) or {{}}
+        cal = cfg.get('calibration', {{}}) or {{}}
+        if args.mode:
+            cal['mode'] = args.mode
+        if args.source:
+            cal['bookings_csv_path'] = args.source
+        if args.schema:
+            cal['schema'] = args.schema
+        cfg['calibration'] = cal
+        with open('config.yaml','w') as f:
+            yaml.safe_dump(cfg, f, sort_keys=False)
+
+    
+if args.diagnose:
+        # Print schema detection, required columns, rows ignored by gates, weeks used, WAU snapshot
+        import pandas as pd, os
+        from model import load_params
+        try:
+            p = load_params('config.yaml')
+            print("Diagnosis for calibration:")
+            print(f"  mode: {p.calibration_mode}")
+            print(f"  schema_hint: {getattr(p,'calibration_schema_hint','auto')}")
+            print(f"  source: {p.bookings_csv_path}")
+            print(f"  weeks_to_use: {p.weeks_to_use}")
+            print(f"  flights_gate: {p.flights_gate}")
+            print(f"  WAU (partners, non_partners): {p.initial_wau_by_group.get('partners'):.0f}, {p.initial_wau_by_group.get('non_partners'):.0f}")
+            if p.bookings_csv_path and os.path.exists(p.bookings_csv_path):
+                df = pd.read_csv(p.bookings_csv_path)
+                cols = [str(c).lower() for c in df.columns]
+                print(f"  columns: {sorted(set(cols))}")
+                has_unique = {'weekly_unique_bookers_est','lob'}.issubset(set(cols)) and (len({'week','week_number'} & set(cols))>0) and ('user_type' in cols)
+                has_tx = any(c in cols for c in ['flights','hotels','cars','cruises']) and ('week' in cols)
+                detected = 'unique_bookers' if has_unique else ('transactions' if has_tx else 'unknown')
+                print(f"  detected_schema: {detected}")
+                if has_unique and not p.flights_gate.get('non_partners', False):
+                    try:
+                        drop = df[(df['lob'].str.lower()=='flights') & (df['user_type'].str.lower().str.contains('non'))]
+                        print(f"  note: would ignore {len(drop)} non-partner flight rows due to flights_gate")
+                    except Exception:
+                        pass
+            else:
+                print("  (no source file available)")
+        except Exception as e:
+            print("Diagnosis failed:", e)
+else:
+        main()

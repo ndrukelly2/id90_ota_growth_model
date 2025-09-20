@@ -204,3 +204,32 @@ calibration:
 * The simulator reads only `config.yaml`. A previous mention of `config.py` is obsolete.
 * Calibration keys are **strictly nested** under `calibration:`.
 * CSV schema remains stable; downstream notebooks or dashboards can rely on the columns listed above.
+
+---
+
+## Calibration cheat sheet
+
+**Modes**
+- `none` — use explicit `booker_rate_weekly_by_group` if provided; otherwise simulate with current values.
+- `target_annual_take` — fit a scalar weekly p_book (shared or by-group) to hit `target_annual_take_usd` over the horizon.
+- `transactions` — fit p_book against weekly total **transactions** by LOB (wide CSV).
+- `unique_bookers` — fit p_book against weekly **unique bookers** per (group×LOB) (long CSV).
+
+**Keys**
+```yaml
+calibration:
+  mode: unique_bookers        # none | target_annual_take | transactions | unique_bookers
+  source: data.csv            # -> bookings_csv_path
+  schema: auto                # auto | transactions | unique_bookers
+  group_rate: by_group        # shared | by_group (back-compat: shared_rate_only: bool)
+  weeks_to_use: 52
+  rate_cap_weekly: 0.25       # -> max_weekly_booker_rate
+```
+
+**Data requirements**
+| mode | required columns | optional | notes |
+|---|---|---|---|
+| transactions | `week`, `flights`, `hotels`, `cars`, `cruises` | — | sums to weekly total bookings |
+| unique_bookers | `week` or `week_number`, `user_type`, `lob`, `weekly_unique_bookers_est` | `p_week` or `ppby` | drops rows inconsistent with `flights_gate` |
+
+**Tip:** `python run.py --diagnose` prints what the model will use and highlights any rows ignored by gates.

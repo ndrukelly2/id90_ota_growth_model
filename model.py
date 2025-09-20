@@ -74,6 +74,9 @@ class Params:
     calibration_shared_rate_only: bool = False
     calibration_max_weekly_booker_rate: float = 1.0
 
+    # Optional hint: 'auto' | 'transactions' | 'unique_bookers'
+    calibration_schema_hint: str = 'auto'
+
     # LOB frequencies (per-booker per year) and economics
     purchases_per_booker_per_year_by_lob_by_group: Dict[str, Dict[str, float]] = field(default_factory=dict)
     lobs: Dict[str, LOBEconomics] = field(default_factory=dict)
@@ -174,25 +177,45 @@ def load_params(config_path: str) -> Params:
     booker_cfg = cfg.get("booker_rate_weekly_by_group", {})
     p_book = {g: booker_cfg.get(g) for g in GROUPS}
 
-    calib_mode = safe_get(cfg, "calibration", "mode", default="none")
-    target_take = safe_get(cfg, "calibration", "target_annual_take_usd", default=None)
-    bookings_csv_path = safe_get(cfg, "calibration", "bookings_csv_path", default=None)
+
+    # 5) Booker rates + calibration mode
+    booker_cfg = cfg.get("booker_rate_weekly_by_group", {})
+    p_book = {g: booker_cfg.get(g) for g in GROUPS}
+
+    calib = cfg.get("calibration", {}) or {}
+    mode_val = str(calib.get("mode", "none") or "none").lower()
+    schema_val = str(calib.get("schema", "auto") or "auto").lower()
+    # Back-compat: accept 'observed_bookings' as 'transactions'
+    if mode_val == "observed_bookings":
+        mode_val = "transactions"
+    # Accept target_take alias
+    if mode_val == "target_take":
+        mode_val = "target_annual_take"
+
+    # group_rate: shared|by_group (back-compat with shared_rate_only bool)
+    group_rate = str(calib.get("group_rate", None) or "").lower()
+    shared_rate_only = bool(calib.get("shared_rate_only", False))
+    if group_rate:
+        shared_rate_only = (group_rate == "shared")
+
+    target_annual_take_usd = calib.get("target_annual_take_usd")
+    bookings_csv_path = calib.get("bookings_csv_path")
     if bookings_csv_path and not os.path.isabs(bookings_csv_path):
         bookings_csv_path = os.path.join(config_dir, bookings_csv_path)
-    weeks_to_use = safe_get(cfg, "calibration", "weeks_to_use", default=52)
-    shared_rate_only = bool(safe_get(cfg, "calibration", "shared_rate_only", default=False))
-    max_weekly_booker_rate = float(safe_get(cfg, "calibration", "max_weekly_booker_rate", default=1.0))
+    weeks_to_use = int(calib.get("weeks_to_use", 52))
+    max_weekly_booker_rate = float(calib.get("rate_cap_weekly", calib.get("max_weekly_booker_rate", 1.0)))
 
-    if calib_mode == "target_annual_take" and target_take is not None:
+    # Normalize calibration_mode
+    if mode_val == "target_annual_take" and target_annual_take_usd is not None:
         calibration_mode = "target_annual_take"
-        target_annual_take_usd = float(target_take)
-    elif calib_mode == "observed_bookings" and bookings_csv_path is not None:
-        calibration_mode = "observed_bookings"
-        target_annual_take_usd = None
+    elif mode_val in {"transactions", "unique_bookers"} and bookings_csv_path is not None:
+        calibration_mode = mode_val
     else:
         calibration_mode = "none"
-        target_annual_take_usd = None
 
+    # Store schema hint for later
+    calib_schema_hint = schema_val
+    
     # 6) Frequencies + economics
     freq = safe_get(cfg, "purchases_per_booker_per_year_by_lob_by_group", default={})
     # Apply optional product-mix scaling (by lob and optionally by group)
@@ -244,6 +267,7 @@ def load_params(config_path: str) -> Params:
         bookings_csv_path=bookings_csv_path,
         weeks_to_use=int(weeks_to_use),
         calibration_shared_rate_only=shared_rate_only,
+        calibration_schema_hint=calib_schema_hint,
         calibration_max_weekly_booker_rate=max_weekly_booker_rate,
         purchases_per_booker_per_year_by_lob_by_group=freq,
         lobs=lobs,
@@ -550,38 +574,119 @@ def _get_potential_bookings_by_group(p: Params) -> pd.DataFrame:
     return pd.DataFrame(potential_bookings)
 
 
+
 def _calibrate_booker_rates_from_observed_bookings(p: Params) -> Dict[str, float]:
     """
-    Fit p_book by regressing observed total bookings against potential bookings from each group.
-    Supports a shared-rate option for numerical stability.
+    Fit p_book using historical data.
+    Supports two CSV schemas (auto-detected or via p.calibration_schema_hint):
+      - "transactions": weekly total transactions per LOB in columns.
+      - "unique_bookers": long-form rows with weekly unique bookers by (group, lob).
     """
     if not p.bookings_csv_path or not os.path.exists(p.bookings_csv_path):
         raise FileNotFoundError(f"Bookings CSV not found at {p.bookings_csv_path}")
 
-    # 1. Potential bookings under unit booker rate
-    potential_df = _get_potential_bookings_by_group(p)
-    
-    # 2. Observed bookings
-    observed_df = pd.read_csv(p.bookings_csv_path)
-    observed_df.columns = [c.lower() for c in observed_df.columns]
-    # Expect columns: week, flights, hotels, cars, cruises (case-insensitive handled above)
-    lob_cols = [c for c in observed_df.columns if c in LOBS]
-    if not lob_cols:
-        raise ValueError("Observed bookings CSV must contain LOB columns: flights, hotels, cars, cruises")
-    observed_df['bookings_total'] = observed_df[lob_cols].sum(axis=1)
+    df = pd.read_csv(p.bookings_csv_path)
+    df.columns = [str(c).strip().lower() for c in df.columns]
+    schema_hint = (p.calibration_schema_hint or "auto").lower()
 
-    # 3. Align weeks
-    weeks = min(p.weeks_to_use, len(potential_df), len(observed_df))
-    merged = pd.merge(potential_df.head(weeks), observed_df.head(weeks), on='week')
+    def _schema_detect(_df: pd.DataFrame) -> str:
+        cols = set(_df.columns)
+        if {"weekly_unique_bookers_est", "lob"}.issubset(cols) and ({"week"} & cols or {"week_number"} & cols) and {"user_type"} & cols:
+            return "unique_bookers"
+        lob_cols = [c for c in LOBS if c in cols]
+        if lob_cols and ("week" in cols):
+            return "transactions"
+        return "unknown"
 
-    # 4. Regression
+    schema = _schema_detect(df) if schema_hint == "auto" else schema_hint
+    if schema == "unknown":
+        raise ValueError("Cannot detect schema; expected either transactions (week+LOB cols) "
+                         "or unique_bookers (week/week_number,user_type,lob,weekly_unique_bookers_est).")
+
     max_rate = float(p.calibration_max_weekly_booker_rate)
+
+    if schema == "unique_bookers":
+        week_col = "week" if "week" in df.columns else "week_number"
+        # normalize group
+        def map_group(s: str) -> str:
+            s = (s or "").strip().lower()
+            if s in {"partner", "partners"}:
+                return "partners"
+            if s in {"non-partner", "nonpartner", "non_partners", "non partners", "non-partners"}:
+                return "non_partners"
+            return s
+        if "user_type" not in df.columns:
+            raise ValueError("unique_bookers schema requires 'user_type' column.")
+        df["group"] = df["user_type"].map(map_group)
+        df["lob"] = df["lob"].str.strip().str.lower()
+        df = df[df["lob"].isin(LOBS)]
+
+        # Enforce flights gate: drop rows that are impossible in the sim
+        df = df[~((df["lob"]=="flights") & (df["group"]=="non_partners") & (not p.flights_gate.get("non_partners", False)))]
+        # limit horizon
+        weeks = int(p.weeks_to_use or p.weeks)
+        df = df.sort_values(by=[week_col]).groupby([week_col, "group", "lob"], as_index=False).sum(numeric_only=True)
+        df = df[(df[week_col] >= 1) & (df[week_col] <= weeks)]
+
+        # Active by group per week
+        act = _get_active_by_group_for_weeks(p)
+        act_map = {
+            "partners": dict(zip(act["week"], act["partners"])),
+            "non_partners": dict(zip(act["week"], act["non_partners"])),
+        }
+        # p_week per row
+        if "p_week" in df.columns:
+            df["p_week_lob"] = df["p_week"].astype(float).clip(0.0, 1.0)
+        elif "ppby" in df.columns:
+            df["p_week_lob"] = 1.0 - np.exp(-df["ppby"].astype(float) / 52.0)
+        else:
+            def p_week_from_cfg(row):
+                g, lob = row["group"], row["lob"]
+                fpy = float((p.purchases_per_booker_per_year_by_lob_by_group.get(g, {}) or {}).get(lob, 0.0))
+                return 1.0 - math.exp(-fpy / 52.0)
+            df["p_week_lob"] = df.apply(p_week_from_cfg, axis=1)
+
+        # Build X,y
+        df["active"] = df.apply(lambda r: float(act_map[r["group"]].get(int(r[week_col]), 0.0)), axis=1)
+        df = df[(df["active"] > 0) & (df["weekly_unique_bookers_est"] >= 0)]
+        df["X"] = df["active"] * df["p_week_lob"]
+        df["y"] = df["weekly_unique_bookers_est"].astype(float)
+
+        if p.calibration_shared_rate_only:
+            X = df["X"].values
+            y = df["y"].values
+            denom = float(np.dot(X, X))
+            coeff = float(np.dot(X, y) / denom) if denom > 0 else 0.0
+            coeff = max(0.0, min(max_rate, coeff))
+            return {"partners": coeff, "non_partners": coeff}
+        else:
+            out = {}
+            for g in GROUPS:
+                d = df[df["group"]==g]
+                if len(d)==0:
+                    out[g] = 0.0
+                    continue
+                Xg, yg = d["X"].values, d["y"].values
+                denom = float(np.dot(Xg, Xg))
+                coeff = float(np.dot(Xg, yg) / denom) if denom > 0 else 0.0
+                out[g] = max(0.0, min(max_rate, coeff))
+            return out
+
+    # transactions schema
+    lob_cols = [c for c in df.columns if c in LOBS]
+    if not lob_cols:
+        raise ValueError("transactions schema requires LOB columns: flights, hotels, cars, cruises")
+    df['bookings_total'] = df[lob_cols].sum(axis=1)
+
+    potential_df = _get_potential_bookings_by_group(p)
+    weeks = min(p.weeks_to_use, len(potential_df), len(df))
+    merged = pd.merge(potential_df.head(weeks), df.head(weeks), on='week')
+
     if p.calibration_shared_rate_only:
-        X = (merged['partners'] + merged['non_partners']).values.reshape(-1, 1)
+        X = (merged['partners'] + merged['non_partners']).values
         y = merged['bookings_total'].values
-        # closed-form least squares for single feature
-        denom = float(np.dot(X[:,0], X[:,0]))
-        coeff = float(np.dot(X[:,0], y) / denom) if denom > 0 else 0.0
+        denom = float(np.dot(X, X))
+        coeff = float(np.dot(X, y) / denom) if denom > 0 else 0.0
         coeff = max(0.0, min(max_rate, coeff))
         return {"partners": coeff, "non_partners": coeff}
     else:
@@ -592,6 +697,14 @@ def _calibrate_booker_rates_from_observed_bookings(p: Params) -> Dict[str, float
         c_non_partners = max(0.0, min(max_rate, float(coeffs[1])))
         return {"partners": c_partners, "non_partners": c_non_partners}
 
+
+
+def _get_active_by_group_for_weeks(p: Params) -> pd.DataFrame:
+    rows, _ = _simulate_weeks(p, p_book_override={g: 0.0 for g in GROUPS})
+    return pd.DataFrame([
+        {"week": r["week"], "partners": r["active_partners"], "non_partners": r["active_non_partners"]}
+        for r in rows
+    ])
 
 # -----------------------------
 # Public API
@@ -604,7 +717,7 @@ def run_sim(config_path: str) -> List[Dict[str, Any]]:
     # Calibrate p_book if requested
     if params.calibration_mode == "target_annual_take":
         p_book = _calibrate_booker_rates_for_target_take(params)
-    elif params.calibration_mode == "observed_bookings":
+    elif params.calibration_mode in {"transactions","unique_bookers"}:
         p_book = _calibrate_booker_rates_from_observed_bookings(params)
     else:
         # Use provided (fill Nones with 0)
