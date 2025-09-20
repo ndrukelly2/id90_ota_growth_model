@@ -158,7 +158,7 @@ def load_params(config_path: str) -> Params:
         cohort_path = os.path.join(config_dir, cohort_path)
     hazard_scale = float(cfg.get("retention_hazard_scale", 1.0))
     retention_points = cfg.get("retention_points")
-    print(cohort_path)
+    # Debug prints removed; keep loader quiet
     if cohort_path and os.path.exists(cohort_path):
         W, p_grad = _derive_presence_from_cohort_csv(cohort_path, hazard_scale)
         cohort_use_csv = True

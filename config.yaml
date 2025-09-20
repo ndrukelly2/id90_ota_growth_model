@@ -15,7 +15,7 @@ time_grain: weekly
 weeks_per_month: 4.34 # used to convert weekly metrics to monthly
 # --- BASELINE CALIBRATION OUTPUT ---
 # --- The output of our initial baseline calibration run should be entered here. Only used for delta calcs ---
-baseline_total_take_usd: 23304459
+baseline_total_take_usd: 22999643
 # --- SIMULATION HORIZON ---
 weeks: 52
 
@@ -24,15 +24,15 @@ user_groups:
   # Share of initial WAU by group when only a total WAU is provided.
   # If you have exact per-group WAU, set those below and ignore this share.
   active_user_share:
-    partners: 0.6
-    non_partners: 0.4
+    partners: 0.55
+    non_partners: 0.45
 
 # Initialize from WAU (7-day actives). Replace with your latest measured WAU.
 # If you have per-group WAU, set `initial_wau_by_group`; otherwise set `initial_wau_total`.
-initial_wau_total: 300000    # <-- From your note: 7-day MAU/WAU ≈ 300k
+initial_wau_total: 150000    # <-- From your note: 7-day MAU/WAU ≈ 300k
 initial_wau_by_group:
-  partners: 180000             # set integers to override shares, e.g., 160000
-  non_partners: 120000
+  partners: null             # set integers to override shares, e.g., 160000
+  non_partners: null
 
 # Optional DAU/WAU sanity check (no simulation impact). If provided, the runner will print a check.
 dau_wau_ratio: 0.35          # <-- From your note (≈ 35%). Implies ~2.45 active days/week per WAU.
@@ -47,7 +47,7 @@ new_accounts:
   mode: baseline_growth   # "baseline_growth" or "series"
   # When mode == baseline_growth: provide a baseline value and a weekly growth rate
   baseline_per_week_by_group:
-    partners: 1098         # Roughly sized so WAU is stable with ~1% weekly mature churn.
+    partners: 1098        # Roughly sized so WAU is stable with ~1% weekly mature churn.
     non_partners: 2039    # Tune with your acquisition reality.
   growth_rate_weekly_by_group:
     partners: 0.00        # e.g., 0.01 for +1% WoW growth in new accounts
@@ -121,15 +121,15 @@ calibration:
 # Keep simple for now; later you can differentiate by group if needed.
 purchases_per_booker_per_year_by_lob_by_group:
   partners:
-    flights: 11.26
-    hotels: 1.16
-    cars: 0.50
-    cruises: 0.08
+    flights: 10.9 # PNRs/partner booker/year
+    hotels: 1.294
+    cars: 0.579
+    cruises: 0.0358
   non_partners:
     flights: 0.0   # Will be zeroed by the flights gate below
-    hotels: 1.16
-    cars: 0.5
-    cruises: 0.08
+    hotels: 1.467
+    cars: 0.372
+    cruises: 0.112
 
 # --- PRODUCT ATTACHMENT KNOBS ---
 # Multiply the base purchases_per_booker_per_year_by_lob_by_group
@@ -147,11 +147,11 @@ lobs:
   flights:
     take_per_pnr_usd: 5.00
   hotels:
-    take_per_booking_usd: 45.0
+    take_per_booking_usd: 44.0
   cars:
-    take_per_booking_usd: 5.5
+    take_per_booking_usd: 5.0
   cruises:
-    take_per_booking_usd: 240.0
+    take_per_booking_usd: 220.0
 
 
 # --- FLIGHTS GATE (Suppression: non-partners cannot book flights) ---
@@ -171,8 +171,8 @@ flights_gate:
 # ------------------------------------------------------------------------------
 
 initial_wau_by_group:
-  partners: 150000   # split of your stated WAU≈300000
-  non_partners: 150000
+  partners: null   # split of your stated WAU≈300000
+  non_partners: null
 
 ## Some reference data on time to first puchase 
 ## with 730 day lookback window [Do Not Delete] ##

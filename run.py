@@ -1,6 +1,6 @@
 import pandas as pd
 import yaml
-from model import run_sim
+from model import run_sim, load_params
 
 def main():
     rows = run_sim('config.yaml')
@@ -11,6 +11,13 @@ def main():
 
     # Set pandas display options for nicer formatting
     pd.options.display.float_format = '{:,.2f}'.format
+
+    # Print onboarding graduation fraction (p_grad) derived from cohort/retention
+    try:
+        params = load_params('config.yaml')
+        print(f"p_grad (onboarding graduation fraction after ~90d): {params.p_grad:.4f}")
+    except Exception as e:
+        print(f"Could not load p_grad: {e}")
 
     print("\nTotals from simulation_output.csv:")
     # The 'week' column is not a metric to be summed, so we drop it.
@@ -63,7 +70,7 @@ def main():
         avg_churn = (df['churned_partners'] + df['churned_non_partners']).mean()
     else:
         avg_churn = float('nan')
-    print(f"Avg churn/week: {avg_churn:,.0f}")
+    print(f"Avg mature churn/week: {avg_churn:,.0f}")
 
 
 if __name__ == '__main__':
